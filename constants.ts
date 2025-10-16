@@ -1,5 +1,5 @@
 // Fix: Provide mock data for the application
-import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, AttendanceData } from './types';
+import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, AttendanceData, FeeCollection, FeeChartDataPoint } from './types';
 
 export const AGENDA: AgendaItem[] = [
   { id: 1, time: '08:00', title: 'Mathematics', subtitle: 'Room 201, Mrs. Davis', color: 'bg-orange-100' },
@@ -115,3 +115,33 @@ const generateAttendanceData = (): AttendanceData[] => {
 }
 
 export const ATTENDANCE_DATA: AttendanceData[] = generateAttendanceData();
+
+export const FEES_CHART_DATA: FeeChartDataPoint[] = [
+    { month: 'Jan', amount: 2000 },
+    { month: 'Feb', amount: 2500 },
+    { month: 'Mar', amount: 3000 },
+    { month: 'Apr', amount: 2800 },
+    { month: 'May', amount: 4000 },
+    { month: 'Jun', amount: 3500 },
+    { month: 'Jul', amount: 5000 },
+    { month: 'Aug', amount: 6500 },
+    { month: 'Sep', amount: 6000 },
+    { month: 'Oct', amount: 5500 },
+    { month: 'Nov', amount: 7000 },
+    { month: 'Dec', amount: 6800 },
+];
+
+export const FEE_COLLECTION_DATA: FeeCollection[] = [
+    { id: 1, studentName: 'Sophia Wilson', studentId: '2019-03-017', avatar: 'https://i.pravatar.cc/150?img=31', class: '11A', tuitionFee: 4500, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5000, status: 'Paid' },
+    { id: 2, studentName: 'Ethan Lee', studentId: '2019-01-016', avatar: 'https://i.pravatar.cc/150?img=32', class: '10B', tuitionFee: 4500, activitiesFee: 250, miscellaneousFee: 150, totalAmount: 4900, status: 'Pending' },
+    { id: 3, studentName: 'Michael Brown', studentId: '2019-01-012', avatar: 'https://i.pravatar.cc/150?img=33', class: '12 AP Calculus', tuitionFee: 4800, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5300, status: 'Paid' },
+    { id: 4, studentName: 'Ava Smith', studentId: '2019-01-019', avatar: 'https://i.pravatar.cc/150?img=34', class: '9B', tuitionFee: 4500, activitiesFee: 250, miscellaneousFee: 100, totalAmount: 4850, status: 'Overdue' },
+    { id: 5, studentName: 'Lucas Johnson', studentId: '2019-01-004', avatar: 'https://i.pravatar.cc/150?img=35', class: '11A', tuitionFee: 4500, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5000, status: 'Paid' },
+    { id: 6, studentName: 'Isabella Garcia', studentId: '2019-03-012', avatar: 'https://i.pravatar.cc/150?img=36', class: '8B', tuitionFee: 4200, activitiesFee: 200, miscellaneousFee: 150, totalAmount: 4550, status: 'Pending' },
+    { id: 7, studentName: 'Oliver Martinez', studentId: '2019-10-014', avatar: 'https://i.pravatar.cc/150?img=37', class: 'Drama Club', tuitionFee: 4600, activitiesFee: 350, miscellaneousFee: 100, totalAmount: 4950, status: 'Paid' },
+    { id: 8, studentName: 'Hannah White', studentId: '2019-01-012', avatar: 'https://i.pravatar.cc/150?img=38', class: '7C', tuitionFee: 4200, activitiesFee: 200, miscellaneousFee: 100, totalAmount: 4500, status: 'Paid' },
+    { id: 9, studentName: 'Aiden Taylor', studentId: '2019-01-015', avatar: 'https://i.pravatar.cc/150?img=39', class: 'Spanish I', tuitionFee: 4200, activitiesFee: 250, miscellaneousFee: 150, totalAmount: 4600, status: 'Overdue' },
+    { id: 10, studentName: 'Emily Peterson', studentId: '2019-02-011', avatar: 'https://i.pravatar.cc/150?img=40', class: '10A', tuitionFee: 4500, activitiesFee: 250, miscellaneousFee: 150, totalAmount: 4900, status: 'Pending' },
+    { id: 11, studentName: 'Jacob Rodriguez', studentId: '2019-04-020', avatar: 'https://i.pravatar.cc/150?img=41', class: '11B', tuitionFee: 4500, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5000, status: 'Paid' },
+    { id: 12, studentName: 'Mia Wilson', studentId: '2019-05-021', avatar: 'https://i.pravatar.cc/150?img=42', class: '9C', tuitionFee: 4400, activitiesFee: 220, miscellaneousFee: 120, totalAmount: 4740, status: 'Pending' },
+];

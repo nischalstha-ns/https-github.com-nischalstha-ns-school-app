@@ -109,3 +109,21 @@ export interface AttendanceData {
     date: string; // YYYY-MM-DD format
     status: AttendanceStatus;
 }
+
+export interface FeeCollection {
+    id: number;
+    studentName: string;
+    studentId: string;
+    avatar: string;
+    class: string;
+    tuitionFee: number;
+    activitiesFee: number;
+    miscellaneousFee: number;
+    totalAmount: number;
+    status: 'Paid' | 'Pending' | 'Overdue';
+}
+
+export interface FeeChartDataPoint {
+    month: string;
+    amount: number;
+}

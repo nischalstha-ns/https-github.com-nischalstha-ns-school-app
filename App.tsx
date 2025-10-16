@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import StudentList from './components/StudentList';
 import TeacherList from './components/TeacherList';
 import Attendance from './components/Attendance';
+import Finance from './components/Finance';
 import { 
     DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, 
     NoticeIcon, CalendarIcon, LibraryIcon, MessageIcon, ProfileIcon, 
@@ -168,7 +169,7 @@ const Placeholder: React.FC<{title: string}> = ({title}) => (
 );
 
 const App: React.FC = () => {
-    const [currentView, setCurrentView] = useState<View>(View.Dashboard);
+    const [currentView, setCurrentView] = useState<View>(View.Finance);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -193,7 +194,7 @@ const App: React.FC = () => {
             case View.Attendance:
                 return <Attendance />;
             case View.Finance:
-                return <Placeholder title="Finance" />;
+                return <Finance />;
             case View.Notice:
                 return <Placeholder title="Notice" />;
             case View.Calendar:
