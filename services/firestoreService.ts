@@ -1,12 +1,13 @@
 import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, writeBatch, getCountFromServer, query, where, setDoc, limit } from 'firebase/firestore';
-import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection } from '../types';
-import { STUDENTS as mockStudents, TEACHERS as mockTeachers, FEE_COLLECTION_DATA as mockFinanceData } from '../constants';
+import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection, UserAccount } from '../types';
+import { STUDENTS as mockStudents, TEACHERS as mockTeachers, FEE_COLLECTION_DATA as mockFinanceData, USERS as mockUsers } from '../constants';
 
 const studentsCollectionRef = collection(db, 'students');
 const teachersCollectionRef = collection(db, 'teachers');
 const attendanceCollectionRef = collection(db, 'attendance');
 const financeCollectionRef = collection(db, 'finance');
+const usersCollectionRef = collection(db, 'users');
 
 
 // --- Student Functions ---
@@ -224,4 +225,66 @@ export const seedFinanceDatabase = async () => {
 
     await batch.commit();
     console.log("Finance database seeded successfully!");
+};
+
+
+// --- User Account Functions ---
+
+export const getAdminProfile = async (email: string): Promise<UserAccount | null> => {
+    const q = query(usersCollectionRef, where('email', '==', email), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const userDoc = querySnapshot.docs[0];
+    return { ...userDoc.data(), id: userDoc.id } as UserAccount;
+};
+
+export const getUsers = async (): Promise<UserAccount[]> => {
+    const data = await getDocs(usersCollectionRef);
+    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as UserAccount));
+};
+
+export const addUser = async (userData: Omit<UserAccount, 'id' | 'password'>) => {
+    // In a real app, the password would be hashed here on the server-side before saving.
+    return await addDoc(usersCollectionRef, userData);
+};
+
+export const updateUser = async (id: string, userData: Partial<Omit<UserAccount, 'id' | 'password'>>) => {
+    const userDoc = doc(db, 'users', id);
+    return await updateDoc(userDoc, userData);
+};
+
+export const deleteUser = async (id: string) => {
+    const userDoc = doc(db, 'users', id);
+    return await deleteDoc(userDoc);
+};
+
+export const getUsersCollectionSize = async (): Promise<number> => {
+    try {
+        const snapshot = await getCountFromServer(usersCollectionRef);
+        return snapshot.data().count;
+    } catch (e) {
+        console.error("Error getting users collection size: ", e);
+        const querySnapshot = await getDocs(usersCollectionRef);
+        return querySnapshot.size;
+    }
+};
+
+export const seedUsersDatabase = async () => {
+    const size = await getUsersCollectionSize();
+    if (size > 0) {
+        console.log("Users collection already has data. Seeding skipped.");
+        return;
+    }
+
+    console.log("Seeding database with mock user data...");
+    const batch = writeBatch(db);
+    mockUsers.forEach(user => {
+        const docRef = doc(usersCollectionRef);
+        batch.set(docRef, user);
+    });
+
+    await batch.commit();
+    console.log("Users database seeded successfully!");
 };

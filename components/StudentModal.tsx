@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Student } from '../types';
-import { XIcon } from './icons';
+import { XIcon, UploadIcon } from './icons';
+import { uploadImage } from '../services/cloudinaryService';
 
 interface StudentModalProps {
     student: Student | null;
@@ -15,7 +16,7 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
         studentId: '',
         rollNo: 0,
         name: '',
-        avatar: '',
+        avatar: 'https://via.placeholder.com/150',
         class: selectedClass !== 'all' ? selectedClass : 1,
         section: 'A',
         gender: 'Male',
@@ -30,6 +31,9 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
     });
     
     const [formData, setFormData] = useState<Omit<Student, 'id'>>(getInitialFormData());
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (student) {
@@ -54,9 +58,9 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
              setFormData({
                 ...getInitialFormData(),
                 studentId: `S-${Math.floor(1000 + Math.random() * 9000)}`,
-                avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
             });
         }
+        setImageFile(null); // Reset file on open
     }, [student, isOpen, selectedClass]);
 
     if (!isOpen) return null;
@@ -70,9 +74,35 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setFormData(prev => ({ ...prev, avatar: event.target?.result as string }));
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ ...formData, id: student?.id });
+        let finalData = { ...formData };
+        
+        if (imageFile) {
+            setIsUploading(true);
+            try {
+                const imageUrl = await uploadImage(imageFile);
+                finalData.avatar = imageUrl;
+            } catch (error) {
+                alert("Image upload failed. Please try again.");
+                setIsUploading(false);
+                return;
+            }
+            setIsUploading(false);
+        }
+        
+        onSave({ ...finalData, id: student?.id });
     };
 
     const inputStyles = "mt-1 block w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -88,6 +118,16 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                     <h2 className="text-2xl font-bold text-neutral-900">{student ? 'Edit Student' : 'Add New Student'}</h2>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+                    <div className="flex items-center gap-4">
+                        <img src={formData.avatar} alt="Avatar" className="w-20 h-20 rounded-full object-cover bg-neutral-200" />
+                        <div>
+                            <label className={labelStyles}>Profile Picture</label>
+                            <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-1 text-sm font-semibold text-primary hover:underline">
+                                Upload Image
+                            </button>
+                            <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden"/>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="name" className={labelStyles}>Full Name</label>
@@ -165,7 +205,9 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                 </form>
                 <div className="p-6 border-t bg-neutral-50 flex justify-end space-x-3">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200">Cancel</button>
-                    <button type="submit" onClick={handleSubmit} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark shadow-sm">Save Student</button>
+                    <button type="submit" onClick={handleSubmit} disabled={isUploading} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark shadow-sm disabled:bg-neutral-400">
+                        {isUploading ? 'Uploading...' : 'Save Student'}
+                    </button>
                 </div>
             </div>
         </div>

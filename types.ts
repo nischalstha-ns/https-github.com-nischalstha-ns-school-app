@@ -12,6 +12,7 @@ export enum View {
     LessonPlan = 'LessonPlan',
     Profile = 'Profile',
     Setting = 'Setting',
+    AccountManagement = 'AccountManagement',
     Logout = 'Logout',
 }
 
@@ -129,4 +130,24 @@ export interface FeeCollection {
 export interface FeeChartDataPoint {
     month: string;
     amount: number;
+}
+
+export enum UserRole {
+    Student = 'Student',
+    Parent = 'Parent',
+    Teacher = 'Teacher',
+    Staff = 'Staff',
+    Finance = 'Finance',
+    Manager = 'Manager',
+    Other = 'Other',
+}
+
+export interface UserAccount {
+    id: string;
+    fullName: string;
+    email: string;
+    role: UserRole;
+    status: 'Active' | 'Inactive';
+    avatar?: string;
+    password?: string; // Only for creation/update, not stored long-term
 }

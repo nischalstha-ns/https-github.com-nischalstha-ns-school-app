@@ -6,11 +6,13 @@ import TeacherList from './components/TeacherList';
 import Attendance from './components/Attendance';
 import Finance from './components/Finance';
 import LessonPlanHelper from './components/LessonPlanHelper';
+import AccountManagement from './components/AccountManagement';
+import Profile from './components/Profile';
 import { 
     DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, 
     NoticeIcon, CalendarIcon, LibraryIcon, MessageIcon, ProfileIcon, 
     SettingsIcon, LogoutIcon, SearchIcon, NotificationIcon, MessageCircleIcon, 
-    ChevronRightIcon, DownloadIcon, MenuIcon, SparklesIcon
+    ChevronRightIcon, DownloadIcon, MenuIcon, SparklesIcon, UsersIcon
 } from './components/icons';
 
 const menuItems = [
@@ -29,6 +31,7 @@ const menuItems = [
 const otherItems = [
     { view: View.Profile, label: 'Profile', icon: ProfileIcon },
     { view: View.Setting, label: 'Setting', icon: SettingsIcon },
+    { view: View.AccountManagement, label: 'Accounts', icon: UsersIcon },
     { view: View.Logout, label: 'Log out', icon: LogoutIcon },
 ]
 
@@ -172,7 +175,7 @@ const Placeholder: React.FC<{title: string}> = ({title}) => (
 );
 
 const App: React.FC = () => {
-    const [currentView, setCurrentView] = useState<View>(View.Students);
+    const [currentView, setCurrentView] = useState<View>(View.Profile);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -200,6 +203,10 @@ const App: React.FC = () => {
                 return <Finance />;
             case View.LessonPlan:
                 return <LessonPlanHelper />;
+            case View.AccountManagement:
+                return <AccountManagement />;
+            case View.Profile:
+                return <Profile />;
             case View.Notice:
                 return <Placeholder title="Notice" />;
             case View.Calendar:
@@ -208,8 +215,6 @@ const App: React.FC = () => {
                 return <Placeholder title="Library" />;
             case View.Message:
                 return <Placeholder title="Message" />;
-            case View.Profile:
-                return <Placeholder title="Profile" />;
             case View.Setting:
                 return <Placeholder title="Settings" />;
             case View.Logout:
