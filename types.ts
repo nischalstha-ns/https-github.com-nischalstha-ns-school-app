@@ -151,3 +151,39 @@ export interface UserAccount {
     avatar?: string;
     password?: string; // Only for creation/update, not stored long-term
 }
+
+export interface CalendarEvent {
+    id: string;
+    date: string; // YYYY-MM-DD
+    title: string;
+    description: string;
+    type: 'event' | 'holiday' | 'exam';
+}
+
+export interface Book {
+    id: string;
+    title: string;
+    author: string;
+    isbn: string;
+    genre: string;
+    status: 'Available' | 'Issued';
+    issuedTo?: string; // Student ID
+    dueDate?: string; // YYYY-MM-DD
+}
+
+export interface Conversation {
+    id: string;
+    participant: {
+        name: string;
+        avatar: string;
+    };
+    lastMessage: string;
+    timestamp: string;
+    unreadCount: number;
+    messages: {
+        id: string;
+        text: string;
+        sender: 'me' | 'other';
+        timestamp: string;
+    }[];
+}

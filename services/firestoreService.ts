@@ -1,290 +1,255 @@
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, writeBatch, getCountFromServer, query, where, setDoc, limit } from 'firebase/firestore';
-import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection, UserAccount } from '../types';
-import { STUDENTS as mockStudents, TEACHERS as mockTeachers, FEE_COLLECTION_DATA as mockFinanceData, USERS as mockUsers } from '../constants';
+import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection, UserAccount, Announcement, Book } from '../types';
+import { 
+    STUDENTS as mockStudents, 
+    TEACHERS as mockTeachers, 
+    FEE_COLLECTION_DATA as mockFinanceData, 
+    USERS as mockUsers, 
+    ANNOUNCEMENTS as mockAnnouncements, 
+    BOOKS as mockBooks 
+} from '../constants';
 
-const studentsCollectionRef = collection(db, 'students');
-const teachersCollectionRef = collection(db, 'teachers');
-const attendanceCollectionRef = collection(db, 'attendance');
-const financeCollectionRef = collection(db, 'finance');
-const usersCollectionRef = collection(db, 'users');
+// --- In-memory database ---
+let inMemoryStudents: Student[] = [];
+let inMemoryTeachers: Teacher[] = [];
+let inMemoryAttendance: AttendanceData[] = [];
+let inMemoryFinance: FeeCollection[] = [];
+let inMemoryUsers: UserAccount[] = [];
+let inMemoryAnnouncements: Announcement[] = [];
+let inMemoryBooks: Book[] = [];
 
+const generateId = () => crypto.randomUUID();
 
 // --- Student Functions ---
-
 export const getStudents = async (): Promise<Student[]> => {
-    const data = await getDocs(studentsCollectionRef);
-    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as Student));
+    return Promise.resolve([...inMemoryStudents]);
 };
 
 export const addStudent = async (studentData: Omit<Student, 'id'>) => {
-    return await addDoc(studentsCollectionRef, studentData);
+    const newStudent = { ...studentData, id: generateId() };
+    inMemoryStudents.push(newStudent);
+    return Promise.resolve({ id: newStudent.id });
 };
 
 export const updateStudent = async (id: string, studentData: Partial<Omit<Student, 'id'>>) => {
-    const studentDoc = doc(db, 'students', id);
-    return await updateDoc(studentDoc, studentData);
+    inMemoryStudents = inMemoryStudents.map(s => s.id === id ? { ...s, ...studentData } : s);
+    return Promise.resolve();
 };
 
 export const deleteStudent = async (id: string) => {
-    const studentDoc = doc(db, 'students', id);
-    return await deleteDoc(studentDoc);
+    inMemoryStudents = inMemoryStudents.filter(s => s.id !== id);
+    return Promise.resolve();
 };
 
 export const getStudentsCollectionSize = async (): Promise<number> => {
-    try {
-        const snapshot = await getCountFromServer(studentsCollectionRef);
-        return snapshot.data().count;
-    } catch (e) {
-        console.error("Error getting collection size: ", e);
-        // Fallback for environments where getCountFromServer might not be available
-        const querySnapshot = await getDocs(studentsCollectionRef);
-        return querySnapshot.size;
-    }
+    return Promise.resolve(inMemoryStudents.length);
 };
 
 export const seedStudentsDatabase = async () => {
-    const size = await getStudentsCollectionSize();
-    if (size > 0) {
+    if (inMemoryStudents.length > 0) {
         console.log("Students collection already has data. Seeding skipped.");
-        return;
+        return Promise.resolve();
     }
-
-    console.log("Seeding database with mock student data...");
-    const batch = writeBatch(db);
-    mockStudents.forEach(student => {
-        const docRef = doc(studentsCollectionRef); // Create a new doc with a random ID
-        batch.set(docRef, student);
-    });
-
-    await batch.commit();
-    console.log("Database seeded successfully!");
+    console.log("Seeding in-memory database with mock student data...");
+    inMemoryStudents = mockStudents.map(student => ({
+        ...student,
+        id: generateId()
+    }));
+    console.log("In-memory database seeded successfully!");
+    return Promise.resolve();
 };
+
 
 // --- Teacher Functions ---
-
-export const getTeachers = async (): Promise<Teacher[]> => {
-    const data = await getDocs(teachersCollectionRef);
-    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as Teacher));
-};
+export const getTeachers = async (): Promise<Teacher[]> => Promise.resolve([...inMemoryTeachers]);
 
 export const addTeacher = async (teacherData: Omit<Teacher, 'id'>) => {
-    return await addDoc(teachersCollectionRef, teacherData);
+    const newTeacher = { ...teacherData, id: generateId() };
+    inMemoryTeachers.push(newTeacher);
+    return Promise.resolve({ id: newTeacher.id });
 };
 
 export const updateTeacher = async (id: string, teacherData: Partial<Omit<Teacher, 'id'>>) => {
-    const teacherDoc = doc(db, 'teachers', id);
-    return await updateDoc(teacherDoc, teacherData);
+    inMemoryTeachers = inMemoryTeachers.map(t => t.id === id ? { ...t, ...teacherData } : t);
+    return Promise.resolve();
 };
 
 export const deleteTeacher = async (id: string) => {
-    const teacherDoc = doc(db, 'teachers', id);
-    return await deleteDoc(teacherDoc);
+    inMemoryTeachers = inMemoryTeachers.filter(t => t.id !== id);
+    return Promise.resolve();
 };
 
-export const getTeachersCollectionSize = async (): Promise<number> => {
-    try {
-        const snapshot = await getCountFromServer(teachersCollectionRef);
-        return snapshot.data().count;
-    } catch (e) {
-        console.error("Error getting collection size: ", e);
-        const querySnapshot = await getDocs(teachersCollectionRef);
-        return querySnapshot.size;
-    }
-};
+export const getTeachersCollectionSize = async (): Promise<number> => Promise.resolve(inMemoryTeachers.length);
 
 export const seedTeachersDatabase = async () => {
-    const size = await getTeachersCollectionSize();
-    if (size > 0) {
-        console.log("Teachers collection already has data. Seeding skipped.");
-        return;
-    }
-
-    console.log("Seeding database with mock teacher data...");
-    const batch = writeBatch(db);
-    mockTeachers.forEach(teacher => {
-        const docRef = doc(teachersCollectionRef);
-        batch.set(docRef, teacher);
-    });
-
-    await batch.commit();
-    console.log("Teachers database seeded successfully!");
+    if (inMemoryTeachers.length > 0) return Promise.resolve();
+    inMemoryTeachers = mockTeachers.map(teacher => ({ ...teacher, id: generateId() }));
+    return Promise.resolve();
 };
 
-// --- Attendance Functions ---
 
+// --- Attendance Functions ---
 export const getAttendance = async (year: number, month: number): Promise<AttendanceData[]> => {
     const monthString = String(month + 1).padStart(2, '0');
     const startDate = `${year}-${monthString}-01`;
     const endDate = `${year}-${monthString}-31`;
-    
-    const q = query(attendanceCollectionRef, where('date', '>=', startDate), where('date', '<=', endDate));
-    const data = await getDocs(q);
-    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as AttendanceData));
+    const filtered = inMemoryAttendance.filter(a => a.date >= startDate && a.date <= endDate);
+    return Promise.resolve([...filtered]);
 };
 
 export const upsertAttendance = async (studentId: string, date: string, status: AttendanceStatus) => {
-    const docId = `${studentId}_${date}`;
-    const attendanceDocRef = doc(db, 'attendance', docId);
-    await setDoc(attendanceDocRef, { studentId, date, status }, { merge: true });
+    const index = inMemoryAttendance.findIndex(a => a.studentId === studentId && a.date === date);
+    if (index > -1) {
+        inMemoryAttendance[index].status = status;
+    } else {
+        inMemoryAttendance.push({ studentId, date, status });
+    }
+    return Promise.resolve();
 };
 
 export const seedAttendanceDatabase = async (year: number, month: number) => {
     const monthString = String(month + 1).padStart(2, '0');
-    const startDate = `${year}-${monthString}-01`;
-    const q = query(attendanceCollectionRef, where('date', '>=', startDate), limit(1));
-    const existingSnapshot = await getDocs(q);
-
-    if (!existingSnapshot.empty) {
+    if (inMemoryAttendance.some(a => a.date.startsWith(`${year}-${monthString}`))) {
         console.log(`Attendance for ${year}-${monthString} already exists. Seeding skipped.`);
-        return;
+        return Promise.resolve();
     }
 
-    const students = await getStudents();
-    if (students.length === 0) {
+    if (inMemoryStudents.length === 0) {
         console.log("No students in the database. Cannot seed attendance.");
-        return;
+        return Promise.resolve();
     }
 
-    const batch = writeBatch(db);
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    students.forEach(student => {
+    inMemoryStudents.forEach(student => {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
             const dateString = date.toISOString().split('T')[0];
             const dayOfWeek = date.getDay();
-
-            let status: AttendanceStatus;
-
-            if (date > today) {
-                status = 'Future';
-            } else if (dayOfWeek === 0 || dayOfWeek === 6) {
-                status = 'Holiday';
-            } else {
-                status = 'Present';
-            }
+            let status: AttendanceStatus = (dayOfWeek === 0 || dayOfWeek === 6) ? 'Holiday' : date > today ? 'Future' : 'Present';
             
-            const docId = `${student.id}_${dateString}`;
-            const docRef = doc(db, 'attendance', docId);
-            batch.set(docRef, { studentId: student.id, date: dateString, status });
+            inMemoryAttendance.push({ studentId: student.id, date: dateString, status });
         }
     });
-
-    await batch.commit();
     console.log(`Attendance for ${year}-${monthString} seeded successfully.`);
+    return Promise.resolve();
 };
+
 
 // --- Finance Functions ---
-
-export const getFinanceData = async (): Promise<FeeCollection[]> => {
-    const data = await getDocs(financeCollectionRef);
-    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as FeeCollection));
-};
+export const getFinanceData = async (): Promise<FeeCollection[]> => Promise.resolve([...inMemoryFinance]);
 
 export const addFinanceRecord = async (recordData: Omit<FeeCollection, 'id'>) => {
-    return await addDoc(financeCollectionRef, recordData);
+    const newRecord = { ...recordData, id: generateId() };
+    inMemoryFinance.push(newRecord);
+    return Promise.resolve({ id: newRecord.id });
 };
 
 export const updateFinanceRecord = async (id: string, recordData: Partial<Omit<FeeCollection, 'id'>>) => {
-    const financeDoc = doc(db, 'finance', id);
-    return await updateDoc(financeDoc, recordData);
+    inMemoryFinance = inMemoryFinance.map(r => r.id === id ? { ...r, ...recordData } : r);
+    return Promise.resolve();
 };
 
 export const deleteFinanceRecord = async (id: string) => {
-    const financeDoc = doc(db, 'finance', id);
-    return await deleteDoc(financeDoc);
+    inMemoryFinance = inMemoryFinance.filter(r => r.id !== id);
+    return Promise.resolve();
 };
 
-export const getFinanceCollectionSize = async (): Promise<number> => {
-    try {
-        const snapshot = await getCountFromServer(financeCollectionRef);
-        return snapshot.data().count;
-    } catch (e) {
-        console.error("Error getting collection size: ", e);
-        const querySnapshot = await getDocs(financeCollectionRef);
-        return querySnapshot.size;
-    }
-};
+export const getFinanceCollectionSize = async (): Promise<number> => Promise.resolve(inMemoryFinance.length);
 
 export const seedFinanceDatabase = async () => {
-    const size = await getFinanceCollectionSize();
-    if (size > 0) {
-        console.log("Finance collection already has data. Seeding skipped.");
-        return;
-    }
-
-    console.log("Seeding database with mock finance data...");
-    const batch = writeBatch(db);
-    mockFinanceData.forEach(record => {
-        const docRef = doc(financeCollectionRef);
-        batch.set(docRef, record);
-    });
-
-    await batch.commit();
-    console.log("Finance database seeded successfully!");
+    if (inMemoryFinance.length > 0) return Promise.resolve();
+    inMemoryFinance = mockFinanceData.map(record => ({ ...record, id: generateId() }));
+    return Promise.resolve();
 };
 
 
 // --- User Account Functions ---
-
 export const getAdminProfile = async (email: string): Promise<UserAccount | null> => {
-    const q = query(usersCollectionRef, where('email', '==', email), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
+    if (inMemoryUsers.length === 0) {
+        inMemoryUsers = mockUsers.map(u => ({ ...u, id: generateId() } as UserAccount));
     }
-    const userDoc = querySnapshot.docs[0];
-    return { ...userDoc.data(), id: userDoc.id } as UserAccount;
+    const user = inMemoryUsers.find(u => u.email === email);
+    return Promise.resolve(user || null);
 };
 
-export const getUsers = async (): Promise<UserAccount[]> => {
-    const data = await getDocs(usersCollectionRef);
-    return data.docs.map(doc => ({ ...doc.data(), id: doc.id } as UserAccount));
-};
+export const getUsers = async (): Promise<UserAccount[]> => Promise.resolve([...inMemoryUsers]);
 
 export const addUser = async (userData: Omit<UserAccount, 'id' | 'password'>) => {
-    // In a real app, the password would be hashed here on the server-side before saving.
-    return await addDoc(usersCollectionRef, userData);
+    const newUser = { ...userData, id: generateId() } as UserAccount;
+    inMemoryUsers.push(newUser);
+    return Promise.resolve({ id: newUser.id });
 };
 
 export const updateUser = async (id: string, userData: Partial<Omit<UserAccount, 'id' | 'password'>>) => {
-    const userDoc = doc(db, 'users', id);
-    return await updateDoc(userDoc, userData);
+    inMemoryUsers = inMemoryUsers.map(u => u.id === id ? { ...u, ...userData } : u);
+    return Promise.resolve();
 };
 
 export const deleteUser = async (id: string) => {
-    const userDoc = doc(db, 'users', id);
-    return await deleteDoc(userDoc);
+    inMemoryUsers = inMemoryUsers.filter(u => u.id !== id);
+    return Promise.resolve();
 };
 
-export const getUsersCollectionSize = async (): Promise<number> => {
-    try {
-        const snapshot = await getCountFromServer(usersCollectionRef);
-        return snapshot.data().count;
-    } catch (e) {
-        console.error("Error getting users collection size: ", e);
-        const querySnapshot = await getDocs(usersCollectionRef);
-        return querySnapshot.size;
-    }
-};
+export const getUsersCollectionSize = async (): Promise<number> => Promise.resolve(inMemoryUsers.length);
 
 export const seedUsersDatabase = async () => {
-    const size = await getUsersCollectionSize();
-    if (size > 0) {
-        console.log("Users collection already has data. Seeding skipped.");
-        return;
-    }
+    if (inMemoryUsers.length > 0) return Promise.resolve();
+    inMemoryUsers = mockUsers.map(user => ({ ...user, id: generateId() } as UserAccount));
+    return Promise.resolve();
+};
 
-    console.log("Seeding database with mock user data...");
-    const batch = writeBatch(db);
-    mockUsers.forEach(user => {
-        const docRef = doc(usersCollectionRef);
-        batch.set(docRef, user);
-    });
 
-    await batch.commit();
-    console.log("Users database seeded successfully!");
+// --- Announcement Functions ---
+export const getAnnouncements = async (): Promise<Announcement[]> => {
+    const sorted = [...inMemoryAnnouncements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return Promise.resolve(sorted);
+};
+
+export const addAnnouncement = async (announcementData: Omit<Announcement, 'id'>) => {
+    const newAnnouncement = { ...announcementData, id: generateId() };
+    inMemoryAnnouncements.push(newAnnouncement);
+    return Promise.resolve({ id: newAnnouncement.id });
+};
+
+export const deleteAnnouncement = async (id: string) => {
+    inMemoryAnnouncements = inMemoryAnnouncements.filter(a => a.id !== id);
+    return Promise.resolve();
+};
+
+export const getAnnouncementsCollectionSize = async (): Promise<number> => Promise.resolve(inMemoryAnnouncements.length);
+
+export const seedAnnouncementsDatabase = async () => {
+    if (inMemoryAnnouncements.length > 0) return Promise.resolve();
+    inMemoryAnnouncements = mockAnnouncements.map(a => ({ ...a, id: generateId() }));
+    return Promise.resolve();
+};
+
+
+// --- Library Book Functions ---
+export const getBooks = async (): Promise<Book[]> => Promise.resolve([...inMemoryBooks]);
+
+export const addBook = async (bookData: Omit<Book, 'id'>) => {
+    const newBook = { ...bookData, id: generateId() };
+    inMemoryBooks.push(newBook);
+    return Promise.resolve({ id: newBook.id });
+};
+
+export const updateBook = async (id: string, bookData: Partial<Omit<Book, 'id'>>) => {
+    inMemoryBooks = inMemoryBooks.map(b => b.id === id ? { ...b, ...bookData } : b);
+    return Promise.resolve();
+};
+
+export const deleteBook = async (id: string) => {
+    inMemoryBooks = inMemoryBooks.filter(b => b.id !== id);
+    return Promise.resolve();
+};
+
+export const getBooksCollectionSize = async (): Promise<number> => Promise.resolve(inMemoryBooks.length);
+
+export const seedBooksDatabase = async () => {
+    if (inMemoryBooks.length > 0) return Promise.resolve();
+    inMemoryBooks = mockBooks.map(book => ({ ...book, id: generateId() }));
+    return Promise.resolve();
 };

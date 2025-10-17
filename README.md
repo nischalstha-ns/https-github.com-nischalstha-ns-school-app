@@ -6,7 +6,7 @@
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 
-SchoolHub is a modern, responsive, and feature-rich dashboard designed to streamline school administration. It provides a clean, intuitive interface for managing students, teachers, and attendance, helping administrators and educators make data-driven decisions.
+SchoolHub is a modern, responsive, and feature-rich dashboard designed to streamline school administration. It provides a clean, intuitive interface for managing students, teachers, attendance, finance, and more, helping administrators and educators make data-driven decisions.
 
 ## 📸 Screenshot
 
@@ -15,29 +15,27 @@ SchoolHub is a modern, responsive, and feature-rich dashboard designed to stream
 ## ✨ Features
 
 -   **📊 Interactive Dashboard:** A comprehensive overview of key school metrics, including student/teacher counts, attendance statistics, financial summaries, and recent activities.
--   **👨‍🎓 Student Management:** Full CRUD (Create, Read, Update, Delete) functionality for student records.
-    -   **Advanced Filtering:** Filter students by class, section, status, and more.
-    -   **Dynamic Sorting:** Sort the student list by name, roll number, admission date, or any other column.
-    -   **Pagination:** Efficiently handles large datasets with client-side pagination.
-    -   **Bulk Import/Export:** Import student data from various file formats and export the list to CSV.
--   **👩‍🏫 Teacher Management:** A complete system for managing teacher profiles.
-    -   **Full CRUD Operations:** Add, view, edit, and delete teacher records.
-    -   **Robust Filtering & Sorting:** Quickly find teachers by department, class, or status.
-    -   **Data Portability:** Export teacher data to a CSV file.
--   **✅ Attendance Tracking:**
-    -   An interactive grid for marking daily attendance (Present, Absent, Leave).
-    -   Dynamic filters for viewing attendance by month and class.
-    -   At-a-glance summary statistics for each student.
--   **📱 Fully Responsive:** A mobile-first design ensures a seamless experience on all devices, from desktops to smartphones. Includes a slide-in sidebar and bottom navigation for mobile users.
--   **📝 Announcements & Notices:** A dedicated section for posting and viewing school-wide announcements.
--   **🤖 Lesson Plan Helper:** An integrated tool to assist educators in creating structured lesson plans.
+-   **👨‍🎓 Student Management:** Full CRUD (Create, Read, Update, Delete) functionality for student records with advanced filtering, sorting, and data import/export.
+-   **👩‍🏫 Teacher Management:** A complete system for managing teacher profiles with full CRUD operations and data export.
+-   **✅ Attendance Tracking:** An interactive grid for marking daily attendance with dynamic filters by month and class.
+-   **💰 Finance Module:** Track fee collections, view payment statuses, and visualize financial data with interactive charts.
+-   **📢 Announcements:** A dedicated section for posting, viewing, and managing school-wide announcements.
+-   **📅 School Calendar:** A full-page calendar to manage and view school events, holidays, and exams.
+-   **📚 Library Management:** A system to manage library books, track their status (Available/Issued), and handle check-ins/check-outs.
+-   **💬 Messaging Interface:** A clean, user-friendly chat interface for internal communications.
+-   **🤖 AI Lesson Plan Helper:** An integrated tool to assist educators in creating structured lesson plans using AI.
+-   **👤 Account & Profile Management:** Manage user accounts and allow individuals to update their own profile information.
+-   **⚙️ Settings Page:** A centralized location for application and user preferences.
+-   **📱 Fully Responsive:** A mobile-first design ensures a seamless experience on all devices, from desktops to smartphones.
 
 ## 🛠️ Tech Stack
 
 -   **Frontend:** [React](https://reactjs.org/)
 -   **Language:** [TypeScript](https://www.typescriptlang.org/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
--   **API Integration:** Native `fetch` API for external service communication.
+-   **Database:** [Firebase Firestore](https://firebase.google.com/docs/firestore) for data persistence.
+-   **AI Integration:** [Google Gemini API](https://ai.google.dev/) for lesson planning and data extraction.
+-   **Image Storage:** [Cloudinary](https://cloudinary.com/) for profile picture uploads.
 
 ## 🚀 Getting Started
 
@@ -47,6 +45,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 -   [Node.js](https://nodejs.org/) (v18 or later)
 -   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+-   Firebase, Cloudinary, and Google Gemini API keys.
 
 ### Installation
 
@@ -63,13 +62,8 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 3.  **Set up environment variables:**
 
-    Create a `.env` file in the root of the project and add the necessary API keys.
-    ```
-    # .env
-    API_KEY="YOUR_API_KEY_HERE"
-    ```
-    *Note: The `API_KEY` is required for certain features like the Lesson Plan Helper and data import functionalities.*
-
+    Create a `.env` file in the root of the project and add the necessary API keys and Firebase configuration.
+    
 4.  **Run the development server:**
     ```bash
     npm run dev
@@ -83,11 +77,12 @@ The project follows a standard React application structure to keep the codebase 
 ```
 /src
 |-- /components     # Reusable React components (e.g., Modals, Tables, Icons)
-|-- /services       # API communication layer
+|-- /services       # API communication layer (Firebase, Gemini, Cloudinary)
 |-- /types          # TypeScript type definitions
 |-- /constants      # Mock data and constants
-|-- App.tsx         # Main application component and router
+|-- App.tsx         # Main application component and view router
 |-- index.tsx       # Entry point of the application
+|-- firebaseConfig.ts # Firebase initialization
 ```
 
 ## 🤝 Contributing

@@ -1,5 +1,5 @@
 // Fix: Provide mock data for the application
-import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole } from './types';
+import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole, CalendarEvent, Book, Conversation } from './types';
 
 const PLACEHOLDER_AVATAR = 'https://via.placeholder.com/150';
 
@@ -73,10 +73,10 @@ export const TEACHERS: Omit<Teacher, 'id'>[] = [
     { teacherId: 'T-MUS-01', name: 'William Moore', avatar: `${PLACEHOLDER_AVATAR}/30`, email: 'w.moore@school.edu', phone: '555-0110', department: 'Music', assignedClasses: ['All'], joiningDate: '2018-02-14', status: 'Active', yearsOfExperience: 10 },
 ];
 
-export const ANNOUNCEMENTS: Announcement[] = [
-    { id: '1', title: 'School Reopens Next Week', content: 'The school will reopen on Monday, September 28th. Please ensure you have all your materials ready.', date: '2030-09-20' },
-    { id: '2', title: 'Annual Sports Day Postponed', content: 'Due to unforeseen weather conditions, the Annual Sports Day has been postponed. A new date will be announced soon.', date: '2030-09-18' },
-    { id: '3', title: 'Library Books Return', content: 'All students are requested to return their library books by the end of this week to avoid any fines.', date: '2030-09-15' },
+export const ANNOUNCEMENTS: Omit<Announcement, 'id'>[] = [
+    { title: 'School Reopens Next Week', content: 'The school will reopen on Monday, September 28th. Please ensure you have all your materials ready.', date: '2030-09-20' },
+    { title: 'Annual Sports Day Postponed', content: 'Due to unforeseen weather conditions, the Annual Sports Day has been postponed. A new date will be announced soon.', date: '2030-09-18' },
+    { title: 'Library Books Return', content: 'All students are requested to return their library books by the end of this week to avoid any fines.', date: '2030-09-15' },
 ];
 
 export const FEES_CHART_DATA: FeeChartDataPoint[] = [
@@ -116,4 +116,58 @@ export const USERS: Omit<UserAccount, 'id' | 'password'>[] = [
     { fullName: 'Alice Johnson', email: 'alice.j@school.com', role: UserRole.Student, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/11` },
     { fullName: 'Finance Team', email: 'finance@school.edu', role: UserRole.Finance, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/50` },
     { fullName: 'Inactive User', email: 'inactive.user@school.edu', role: UserRole.Staff, status: 'Inactive', avatar: `${PLACEHOLDER_AVATAR}/51` },
+];
+
+export const CALENDAR_EVENTS: Omit<CalendarEvent, 'id'>[] = [
+    { date: '2030-09-02', title: 'Labor Day', description: 'School closed for Labor Day.', type: 'holiday' },
+    { date: '2030-09-18', title: 'Parent-Teacher Meeting', description: 'Meeting for parents of students in grades 9-12.', type: 'event' },
+    { date: '2030-09-20', title: 'Annual Sports Day', description: 'All students to participate in the annual sports day events.', type: 'event' },
+    { date: '2030-09-25', title: 'Mid-term Exams Start', description: 'Mid-term examinations for all grades begin.', type: 'exam' },
+    { date: '2030-09-30', title: 'Mid-term Exams End', description: 'Mid-term examinations for all grades conclude.', type: 'exam' },
+];
+
+export const BOOKS: Omit<Book, 'id'>[] = [
+    { title: 'To Kill a Mockingbird', author: 'Harper Lee', isbn: '978-0061120084', genre: 'Fiction', status: 'Available' },
+    { title: '1984', author: 'George Orwell', isbn: '978-0451524935', genre: 'Dystopian', status: 'Issued', issuedTo: 'S-001', dueDate: '2030-10-05' },
+    { title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', isbn: '978-0743273565', genre: 'Fiction', status: 'Available' },
+    { title: 'A Brief History of Time', author: 'Stephen Hawking', isbn: '978-0553380163', genre: 'Science', status: 'Available' },
+    { title: 'Sapiens: A Brief History of Humankind', author: 'Yuval Noah Harari', isbn: '978-0062316097', genre: 'History', status: 'Issued', issuedTo: 'S-003', dueDate: '2030-09-28' },
+    { title: "The Hitchhiker's Guide to the Galaxy", author: 'Douglas Adams', isbn: '978-0345391803', genre: 'Sci-Fi', status: 'Available' },
+    { title: 'Pride and Prejudice', author: 'Jane Austen', isbn: '978-0141439518', genre: 'Romance', status: 'Available' },
+];
+
+export const CONVERSATIONS: Conversation[] = [
+    {
+        id: '1',
+        participant: { name: 'John Doe', avatar: 'https://i.pravatar.cc/150?u=john' },
+        lastMessage: 'Hi, can we reschedule our meeting?',
+        timestamp: '10:30 AM',
+        unreadCount: 2,
+        messages: [
+            { id: 'm1', text: 'Hey, are you free to talk?', sender: 'other', timestamp: '10:25 AM' },
+            { id: 'm2', text: 'Hi, can we reschedule our meeting?', sender: 'other', timestamp: '10:30 AM' },
+            { id: 'm3', text: 'Sure, how about tomorrow at 2 PM?', sender: 'me', timestamp: '10:31 AM' },
+        ]
+    },
+    {
+        id: '2',
+        participant: { name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?u=jane' },
+        lastMessage: 'Please review the attached documents.',
+        timestamp: 'Yesterday',
+        unreadCount: 0,
+        messages: [
+            { id: 'm4', text: 'Please review the attached documents.', sender: 'other', timestamp: 'Yesterday' },
+            { id: 'm5', text: 'Will do, thanks!', sender: 'me', timestamp: 'Yesterday' },
+        ]
+    },
+     {
+        id: '3',
+        participant: { name: 'Robert Brown', avatar: 'https://i.pravatar.cc/150?u=robert' },
+        lastMessage: 'Thank you for your help!',
+        timestamp: '2 days ago',
+        unreadCount: 0,
+        messages: [
+             { id: 'm6', text: 'Thank you for your help!', sender: 'other', timestamp: '2 days ago' },
+        ]
+    }
 ];

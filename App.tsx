@@ -8,6 +8,12 @@ import Finance from './components/Finance';
 import LessonPlanHelper from './components/LessonPlanHelper';
 import AccountManagement from './components/AccountManagement';
 import Profile from './components/Profile';
+import Announcements from './components/Announcements';
+import Calendar from './components/Calendar';
+import Library from './components/Library';
+import Message from './components/Message';
+import Settings from './components/Settings';
+import Logout from './components/Logout';
 import { 
     DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, 
     NoticeIcon, CalendarIcon, LibraryIcon, MessageIcon, ProfileIcon, 
@@ -20,7 +26,7 @@ const menuItems = [
     { view: View.Teachers, label: 'Teachers', icon: TeachersIcon },
     { view: View.Students, label: 'Students', icon: StudentsIcon },
     { view: View.Attendance, label: 'Attendance', icon: AttendanceIcon },
-    { view: View.Finance, label: 'Finance', icon: FinanceIcon, hasArrow: true },
+    { view: View.Finance, label: 'Finance', icon: FinanceIcon },
     { view: View.Notice, label: 'Notice', icon: NoticeIcon },
     { view: View.Calendar, label: 'Calendar', icon: CalendarIcon },
     { view: View.Library, label: 'Library', icon: LibraryIcon },
@@ -55,7 +61,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, currentView, setView }) => 
             {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary rounded-r-full"></div>}
             <item.icon className={`h-6 w-6 ${isActive ? 'text-primary' : 'text-neutral-500'}`} />
             <span className={`font-semibold ${isActive ? 'text-primary' : 'text-neutral-700'}`}>{item.label}</span>
-            {item.hasArrow && <ChevronRightIcon className="w-4 h-4 ml-auto" />}
+            {/* Fix: Removed reference to non-existent 'hasArrow' property. */}
         </button>
     );
 };
@@ -165,17 +171,8 @@ const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> 
     );
 }
 
-const Placeholder: React.FC<{title: string}> = ({title}) => (
-    <div className="flex items-center justify-center h-full p-4 bg-white rounded-xl shadow-sm">
-        <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-800">{title}</h1>
-            <p className="text-neutral-500 mt-2">This page is under construction.</p>
-        </div>
-    </div>
-);
-
 const App: React.FC = () => {
-    const [currentView, setCurrentView] = useState<View>(View.Profile);
+    const [currentView, setCurrentView] = useState<View>(View.Dashboard);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -208,17 +205,17 @@ const App: React.FC = () => {
             case View.Profile:
                 return <Profile />;
             case View.Notice:
-                return <Placeholder title="Notice" />;
+                return <Announcements />;
             case View.Calendar:
-                 return <Placeholder title="Calendar" />;
+                 return <Calendar />;
             case View.Library:
-                return <Placeholder title="Library" />;
+                return <Library />;
             case View.Message:
-                return <Placeholder title="Message" />;
+                return <Message />;
             case View.Setting:
-                return <Placeholder title="Settings" />;
+                return <Settings />;
             case View.Logout:
-                return <Placeholder title="Logged Out" />;
+                return <Logout setView={handleSetView} />;
             default:
                 return <Dashboard />;
         }
