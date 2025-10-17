@@ -4,7 +4,8 @@ import { XIcon } from './icons';
 
 interface TeacherModalProps {
     teacher: Teacher | null;
-    onSave: (teacherData: Omit<Teacher, 'id' | 'assignedClasses'> & { id?: number; assignedClasses: string }) => void;
+    // Fix: The 'id' property is a string in the Teacher type. The modal should handle it as a string.
+    onSave: (teacherData: Omit<Teacher, 'id' | 'assignedClasses'> & { id?: string; assignedClasses: string }) => void;
     onClose: () => void;
     isOpen: boolean;
 }

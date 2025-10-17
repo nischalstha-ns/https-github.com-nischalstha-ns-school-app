@@ -1,26 +1,49 @@
-import React, { useState, useMemo } from 'react';
-import { ATTENDANCE_DATA, STUDENTS } from '../constants';
-import { AttendanceData, Student, AttendanceStatus } from '../types';
-import { CheckCircleIcon, XCircleIcon, MinusCircleIcon, ChevronDownIcon } from './icons';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Student, AttendanceStatus, AttendanceData } from '../types';
+import { CheckCircleIcon, XCircleIcon, MinusCircleIcon } from './icons';
+import { getStudents, getAttendance, upsertAttendance, seedAttendanceDatabase } from '../services/firestoreService';
 
 const Attendance: React.FC = () => {
-    const [attendance, setAttendance] = useState<AttendanceData[]>(ATTENDANCE_DATA);
+    const [students, setStudents] = useState<Student[]>([]);
+    const [attendance, setAttendance] = useState<AttendanceData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSeeding, setIsSeeding] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedClass, setSelectedClass] = useState<number | 'all'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const { daysInMonth, year, month, dateArray } = useMemo(() => {
+    const { year, month, dateArray } = useMemo(() => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const dateArray = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1));
-        return { daysInMonth, year, month, dateArray };
+        return { year, month, dateArray };
     }, [currentDate]);
 
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [studentsData, attendanceData] = await Promise.all([
+                getStudents(),
+                getAttendance(year, month)
+            ]);
+            setStudents(studentsData);
+            setAttendance(attendanceData);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [year, month]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
     const filteredStudents = useMemo(() => {
-        return STUDENTS.filter(student => selectedClass === 'all' || student.class === selectedClass);
-    }, [selectedClass]);
+        return students.filter(student => selectedClass === 'all' || student.class === selectedClass);
+    }, [students, selectedClass]);
 
     const paginatedStudents = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -34,20 +57,32 @@ const Attendance: React.FC = () => {
         setCurrentDate(new Date(year, month - 1, 1));
     };
 
-    const handleStatusChange = (studentId: number, date: string) => {
-        const today = new Date().toISOString().split('T')[0];
-        if (date > today) return; // Cannot change future attendance
+    const handleStatusChange = async (studentId: string, date: string) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(date) > today) return;
 
-        const currentStatus = attendance.find(a => a.studentId === studentId && a.date === date)?.status;
+        const record = attendance.find(a => a.studentId === studentId && a.date === date);
+        const currentStatus = record?.status;
         if (currentStatus === 'Holiday' || currentStatus === 'Future') return;
 
         const statusCycle: AttendanceStatus[] = ['Present', 'Absent', 'Leave'];
         const currentIndex = statusCycle.indexOf(currentStatus || 'Present');
         const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
 
-        setAttendance(prev => 
-            prev.map(a => a.studentId === studentId && a.date === date ? { ...a, status: nextStatus } : a)
-        );
+        try {
+            setAttendance(prev => {
+                const existingRecord = prev.find(a => a.studentId === studentId && a.date === date);
+                if (existingRecord) {
+                    return prev.map(a => a.studentId === studentId && a.date === date ? { ...a, status: nextStatus } : a);
+                }
+                return [...prev, { studentId, date, status: nextStatus }];
+            });
+            await upsertAttendance(studentId, date, nextStatus);
+        } catch (error) {
+            console.error("Failed to update attendance:", error);
+            fetchData();
+        }
     };
 
     const getStatusIcon = (status: AttendanceStatus) => {
@@ -61,7 +96,7 @@ const Attendance: React.FC = () => {
         }
     };
     
-    const getStudentSummary = (studentId: number) => {
+    const getStudentSummary = (studentId: string) => {
         const studentAttendance = attendance.filter(a => a.studentId === studentId && new Date(a.date).getMonth() === month);
         const present = studentAttendance.filter(a => a.status === 'Present').length;
         const absent = studentAttendance.filter(a => a.status === 'Absent').length;
@@ -69,7 +104,20 @@ const Attendance: React.FC = () => {
         return { present, absent, leave };
     };
 
-    const uniqueClasses = [...new Set(STUDENTS.map(s => s.class))].sort((a,b) => a-b);
+    const handleSeed = async () => {
+        setIsSeeding(true);
+        try {
+            await seedAttendanceDatabase(year, month);
+            await fetchData();
+        } catch(e) {
+            console.error("Failed to seed attendance:", e);
+        } finally {
+            setIsSeeding(false);
+        }
+    };
+
+    const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a,b) => a-b);
+    const needsSeeding = students.length > 0 && attendance.length === 0 && !isLoading;
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
@@ -89,6 +137,20 @@ const Attendance: React.FC = () => {
                 </div>
             </div>
 
+            {needsSeeding && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div className="flex items-center">
+                        <div className="flex-grow">
+                            <p className="font-bold">No Attendance Data</p>
+                            <p className="text-sm">Click the seed button to generate attendance records for the current month.</p>
+                        </div>
+                        <button onClick={handleSeed} disabled={isSeeding} className="ml-4 px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            {isSeeding ? 'Seeding...' : 'Seed Attendance'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50">
@@ -98,39 +160,44 @@ const Attendance: React.FC = () => {
                             <th className="px-4 py-3 font-medium text-slate-600 rounded-r-lg text-center">Summary</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {paginatedStudents.map(student => {
-                            const summary = getStudentSummary(student.id);
-                            return (
-                                <tr key={student.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white hover:bg-slate-50 z-10 w-48 min-w-[12rem]">{student.name}</td>
-                                    {dateArray.map(date => {
-                                        const dateString = date.toISOString().split('T')[0];
-                                        const record = attendance.find(a => a.studentId === student.id && a.date === dateString);
-                                        const isClickable = record && record.status !== 'Holiday' && record.status !== 'Future';
-                                        return (
-                                            <td key={date.getDate()} className="px-4 py-3 text-center w-12">
-                                                <button onClick={() => handleStatusChange(student.id, dateString)} disabled={!isClickable} className={`${isClickable ? 'cursor-pointer' : 'cursor-default'}`}>
-                                                    {record ? getStatusIcon(record.status) : '-'}
-                                                </button>
-                                            </td>
-                                        );
-                                    })}
-                                    <td className="px-4 py-3 text-center text-xs">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <span className="text-sky-600 font-semibold">{summary.present}P</span>
-                                            <span className="text-red-600 font-semibold">{summary.absent}A</span>
-                                            <span className="text-yellow-600 font-semibold">{summary.leave}L</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan={dateArray.length + 2} className="text-center p-8 text-slate-500">Loading attendance data...</td></tr>
+                        ) : paginatedStudents.length === 0 ? (
+                            <tr><td colSpan={dateArray.length + 2} className="text-center p-8 text-slate-500">No students found for this class.</td></tr>
+                        ) : (
+                            paginatedStudents.map(student => {
+                                const summary = getStudentSummary(student.id);
+                                return (
+                                    <tr key={student.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white hover:bg-slate-50 z-10 w-48 min-w-[12rem]">{student.name}</td>
+                                        {dateArray.map(date => {
+                                            const dateString = date.toISOString().split('T')[0];
+                                            const record = attendance.find(a => a.studentId === student.id && a.date === dateString);
+                                            const isClickable = record && record.status !== 'Holiday' && record.status !== 'Future';
+                                            return (
+                                                <td key={date.getDate()} className="px-4 py-3 text-center w-12">
+                                                    <button onClick={() => handleStatusChange(student.id, dateString)} disabled={!isClickable} className={`${isClickable ? 'cursor-pointer' : 'cursor-default'}`}>
+                                                        {record ? getStatusIcon(record.status) : '-'}
+                                                    </button>
+                                                </td>
+                                            );
+                                        })}
+                                        <td className="px-4 py-3 text-center text-xs">
+                                            <div className="flex justify-center items-center gap-2">
+                                                <span className="text-sky-600 font-semibold">{summary.present}P</span>
+                                                <span className="text-red-600 font-semibold">{summary.absent}A</span>
+                                                <span className="text-yellow-600 font-semibold">{summary.leave}L</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        )}
                     </tbody>
                 </table>
-                 {paginatedStudents.length === 0 && <div className="text-center py-8 text-slate-500">No students found for this class.</div>}
             </div>
-             {/* Pagination */}
+
              <div className="flex justify-between items-center pt-4">
                 <span className="text-sm text-slate-700">
                     Showing <span className="font-semibold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredStudents.length)}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredStudents.length)}</span> of <span className="font-semibold">{filteredStudents.length}</span> students

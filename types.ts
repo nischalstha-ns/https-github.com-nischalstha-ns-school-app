@@ -9,13 +9,14 @@ export enum View {
     Calendar = 'Calendar',
     Library = 'Library',
     Message = 'Message',
+    LessonPlan = 'LessonPlan',
     Profile = 'Profile',
     Setting = 'Setting',
     Logout = 'Logout',
 }
 
 export interface AgendaItem {
-    id: number;
+    id: string;
     time: string;
     title: string;
     subtitle: string;
@@ -23,7 +24,7 @@ export interface AgendaItem {
 }
 
 export interface Message {
-    id: number;
+    id: string;
     avatar: string;
     sender: string;
     time: string;
@@ -38,7 +39,7 @@ export interface EarningsDataPoint {
 }
 
 export interface StudentActivityItem {
-    id: number;
+    id: string;
     icon: 'trophy' | 'debate' | 'science';
     title: string;
     description: string;
@@ -46,7 +47,7 @@ export interface StudentActivityItem {
 }
 
 export interface NoticeBoardItem {
-    id: number;
+    id: string;
     image: string;
     title: string;
     author: string;
@@ -55,7 +56,7 @@ export interface NoticeBoardItem {
 }
 
 export interface RecentActivityItem {
-    id: number;
+    id: string;
     avatar: string;
     user: string;
     action: string;
@@ -64,7 +65,7 @@ export interface RecentActivityItem {
 }
 
 export interface Student {
-    id: number;
+    id: string;
     studentId: string;
     rollNo: number;
     name: string;
@@ -72,6 +73,8 @@ export interface Student {
     class: number;
     section: 'A' | 'B' | 'C';
     gender: 'Male' | 'Female' | 'Other';
+    dob: string;
+    address: string;
     parentName: string;
     contact: string;
     admissionDate: string;
@@ -82,7 +85,7 @@ export interface Student {
 
 
 export interface Teacher {
-    id: number;
+    id: string;
     teacherId: string;
     name: string;
     avatar: string;
@@ -96,7 +99,7 @@ export interface Teacher {
 }
 
 export interface Announcement {
-    id: number;
+    id: string;
     title: string;
     content: string;
     date: string;
@@ -105,13 +108,13 @@ export interface Announcement {
 export type AttendanceStatus = 'Present' | 'Absent' | 'Leave' | 'Holiday' | 'Future';
 
 export interface AttendanceData {
-    studentId: number;
+    studentId: string; // Changed from number to string to match Student['id']
     date: string; // YYYY-MM-DD format
     status: AttendanceStatus;
 }
 
 export interface FeeCollection {
-    id: number;
+    id: string;
     studentName: string;
     studentId: string;
     avatar: string;

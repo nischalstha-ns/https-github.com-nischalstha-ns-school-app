@@ -18,37 +18,52 @@
         theme: {
           extend: {
             colors: {
-              'brand-bg': '#F9FBFF',
-              'brand-sidebar': '#FFFFFF',
-              'brand-purple': '#6C64F0',
-              'brand-purple-light': '#F4F3FF',
-              'brand-yellow': '#FFBC0A',
-              'brand-yellow-light': '#FFF9EC',
-              'brand-red': '#F24768',
-              'brand-red-light': '#FFF5F6',
-              'brand-green': '#00B69B',
-              'brand-blue': '#4099FF',
-              'brand-blue-light': '#F1F9FF',
-              'brand-text-dark': '#3A3A3A',
-              'brand-text-light': '#A098AE',
-              'brand-border': '#E9E9E9',
+              'brand-bg': '#f7f8fa',
+              'brand-sidebar': '#ffffff',
+              'primary': {
+                DEFAULT: '#4f46e5',
+                'light': '#e0e7ff',
+                'dark': '#4338ca',
+              },
+              'secondary': '#10b981',
+              'accent': {
+                'yellow': '#f59e0b',
+                'red': '#ef4444',
+                'blue': '#3b82f6',
+              },
+              'neutral': {
+                '50': '#f8fafc',
+                '100': '#f1f5f9',
+                '200': '#e2e8f0',
+                '300': '#cbd5e1',
+                '400': '#94a3b8',
+                '500': '#64748b',
+                '600': '#475569',
+                '700': '#334155',
+                '800': '#1e293b',
+                '900': '#0f172a',
+              },
             }
           }
         }
       }
     </script>
     <script type="importmap">
-      {
-        "imports": {
-          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-          "react/": "https://aistudiocdn.com/react@^19.2.0/",
-          "react": "https://aistudiocdn.com/react@^19.2.0",
-          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
-        }
-      }
-    </script>
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+    "firebase/analytics": "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.4.0/"
+  }
+}
+</script>
   </head>
-  <body class="bg-brand-bg antialiased text-brand-text-dark">
+  <body class="bg-brand-bg antialiased text-neutral-800">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

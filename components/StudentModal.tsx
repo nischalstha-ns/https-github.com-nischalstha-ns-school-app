@@ -4,20 +4,23 @@ import { XIcon } from './icons';
 
 interface StudentModalProps {
     student: Student | null;
-    onSave: (studentData: Omit<Student, 'id'> & { id?: number }) => void;
+    onSave: (studentData: Omit<Student, 'id'> & { id?: string }) => void;
     onClose: () => void;
     isOpen: boolean;
+    selectedClass: number | 'all';
 }
 
-const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, isOpen }) => {
-    const [formData, setFormData] = useState<Omit<Student, 'id'>>({
+const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, isOpen, selectedClass }) => {
+    const getInitialFormData = (): Omit<Student, 'id'> => ({
         studentId: '',
         rollNo: 0,
         name: '',
         avatar: '',
-        class: 1,
+        class: selectedClass !== 'all' ? selectedClass : 1,
         section: 'A',
         gender: 'Male',
+        dob: '',
+        address: '',
         parentName: '',
         contact: '',
         admissionDate: new Date().toISOString().split('T')[0],
@@ -25,6 +28,8 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
         email: '',
         attendance: 100,
     });
+    
+    const [formData, setFormData] = useState<Omit<Student, 'id'>>(getInitialFormData());
 
     useEffect(() => {
         if (student) {
@@ -36,6 +41,8 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                 class: student.class,
                 section: student.section,
                 gender: student.gender,
+                dob: student.dob,
+                address: student.address,
                 parentName: student.parentName,
                 contact: student.contact,
                 admissionDate: student.admissionDate,
@@ -44,27 +51,17 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                 attendance: student.attendance,
             });
         } else {
-            setFormData({
+             setFormData({
+                ...getInitialFormData(),
                 studentId: `S-${Math.floor(1000 + Math.random() * 9000)}`,
-                rollNo: 0,
-                name: '',
                 avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-                class: 1,
-                section: 'A',
-                gender: 'Male',
-                parentName: '',
-                contact: '',
-                admissionDate: new Date().toISOString().split('T')[0],
-                status: 'Active',
-                email: '',
-                attendance: 100,
             });
         }
-    }, [student, isOpen]);
+    }, [student, isOpen, selectedClass]);
 
     if (!isOpen) return null;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         const isNumber = type === 'number';
         setFormData(prev => ({
@@ -78,17 +75,17 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
         onSave({ ...formData, id: student?.id });
     };
 
-    const inputStyles = "mt-1 block w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-    const labelStyles = "block text-sm font-medium text-gray-700";
+    const inputStyles = "mt-1 block w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+    const labelStyles = "block text-sm font-medium text-neutral-700";
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl relative max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl relative max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600">
                         <XIcon className="w-6 h-6" />
                     </button>
-                    <h2 className="text-2xl font-bold text-gray-900">{student ? 'Edit Student' : 'Add New Student'}</h2>
+                    <h2 className="text-2xl font-bold text-neutral-900">{student ? 'Edit Student' : 'Add New Student'}</h2>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -104,7 +101,7 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                            <label htmlFor="class" className={labelStyles}>Class</label>
-                           <input type="number" name="class" id="class" value={formData.class} onChange={handleChange} min="1" max="12" required className={inputStyles}/>
+                           <input type="number" name="class" id="class" value={formData.class} onChange={handleChange} min="-2" max="12" required className={inputStyles}/>
                         </div>
                          <div>
                            <label htmlFor="section" className={labelStyles}>Section</label>
@@ -139,11 +136,19 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                             </select>
                         </div>
                         <div>
+                            <label htmlFor="dob" className={labelStyles}>Date of Birth</label>
+                            <input type="date" name="dob" id="dob" value={formData.dob} onChange={handleChange} required className={inputStyles}/>
+                        </div>
+                    </div>
+                     <div>
+                        <label htmlFor="address" className={labelStyles}>Address</label>
+                        <textarea name="address" id="address" value={formData.address} onChange={handleChange} required className={inputStyles} rows={2}></textarea>
+                    </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                         <div>
                             <label htmlFor="admissionDate" className={labelStyles}>Admission Date</label>
                             <input type="date" name="admissionDate" id="admissionDate" value={formData.admissionDate} onChange={handleChange} required className={inputStyles}/>
                         </div>
-                    </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
                             <label htmlFor="status" className={labelStyles}>Status</label>
                             <select name="status" id="status" value={formData.status} onChange={handleChange} className={inputStyles}>
@@ -158,9 +163,9 @@ const StudentModal: React.FC<StudentModalProps> = ({ student, onSave, onClose, i
                         </div>
                     </div>
                 </form>
-                <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200">Cancel</button>
-                    <button type="button" onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm">Save Student</button>
+                <div className="p-6 border-t bg-neutral-50 flex justify-end space-x-3">
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200">Cancel</button>
+                    <button type="submit" onClick={handleSubmit} className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark shadow-sm">Save Student</button>
                 </div>
             </div>
         </div>
