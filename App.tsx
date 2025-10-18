@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View } from './types';
+import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import StudentList from './components/StudentList';
 import TeacherList from './components/TeacherList';
@@ -13,12 +14,11 @@ import Calendar from './components/Calendar';
 import Library from './components/Library';
 import Message from './components/Message';
 import Settings from './components/Settings';
-import Logout from './components/Logout';
 import { 
     DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, 
     NoticeIcon, CalendarIcon, LibraryIcon, MessageIcon, ProfileIcon, 
     SettingsIcon, LogoutIcon, SearchIcon, NotificationIcon, MessageCircleIcon, 
-    ChevronRightIcon, DownloadIcon, MenuIcon, SparklesIcon, UsersIcon
+    DownloadIcon, MenuIcon, SparklesIcon, UsersIcon
 } from './components/icons';
 
 const menuItems = [
@@ -38,8 +38,7 @@ const otherItems = [
     { view: View.Profile, label: 'Profile', icon: ProfileIcon },
     { view: View.Setting, label: 'Setting', icon: SettingsIcon },
     { view: View.AccountManagement, label: 'Accounts', icon: UsersIcon },
-    { view: View.Logout, label: 'Log out', icon: LogoutIcon },
-]
+];
 
 interface NavButtonProps {
     item: typeof menuItems[0];
@@ -61,7 +60,6 @@ const NavButton: React.FC<NavButtonProps> = ({ item, currentView, setView }) => 
             {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary rounded-r-full"></div>}
             <item.icon className={`h-6 w-6 ${isActive ? 'text-primary' : 'text-neutral-500'}`} />
             <span className={`font-semibold ${isActive ? 'text-primary' : 'text-neutral-700'}`}>{item.label}</span>
-            {/* Fix: Removed reference to non-existent 'hasArrow' property. */}
         </button>
     );
 };
@@ -76,7 +74,14 @@ const DownloadAppCard = () => (
     </div>
 );
 
-const Sidebar: React.FC<{ currentView: View; setView: (view: View) => void; isOpen: boolean; }> = ({ currentView, setView, isOpen }) => (
+interface SidebarProps {
+    currentView: View;
+    setView: (view: View) => void;
+    isOpen: boolean;
+    onLogout: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onLogout }) => (
     <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-brand-sidebar border-r border-neutral-200 p-4 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:relative lg:inset-0`}>
         <div className="flex items-center space-x-3 p-3 mb-6">
             <h1 className="text-2xl font-bold text-neutral-800">SchoolHub</h1>
@@ -94,6 +99,13 @@ const Sidebar: React.FC<{ currentView: View; setView: (view: View) => void; isOp
                 {otherItems.map(item => (
                     <NavButton key={item.view} item={item} currentView={currentView} setView={setView} />
                 ))}
+                <button
+                    onClick={onLogout}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-left transition-colors duration-200 text-neutral-500 hover:bg-neutral-100"
+                >
+                    <LogoutIcon className="h-6 w-6 text-neutral-500" />
+                    <span className="font-semibold text-neutral-700">Log out</span>
+                </button>
             </nav>
         </div>
     </aside>
@@ -172,6 +184,7 @@ const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> 
 }
 
 const App: React.FC = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentView, setCurrentView] = useState<View>(View.Dashboard);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -181,6 +194,15 @@ const App: React.FC = () => {
             setIsSidebarOpen(false);
         }
     }, [currentView]);
+    
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+        setCurrentView(View.Dashboard);
+    };
+
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+    };
 
     const handleSetView = (view: View) => {
         setCurrentView(view);
@@ -214,16 +236,18 @@ const App: React.FC = () => {
                 return <Message />;
             case View.Setting:
                 return <Settings />;
-            case View.Logout:
-                return <Logout setView={handleSetView} />;
             default:
                 return <Dashboard />;
         }
     };
 
+    if (!isAuthenticated) {
+        return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
+
     return (
         <div className="min-h-screen flex w-full bg-brand-bg">
-            <Sidebar currentView={currentView} setView={handleSetView} isOpen={isSidebarOpen} />
+            <Sidebar currentView={currentView} setView={handleSetView} isOpen={isSidebarOpen} onLogout={handleLogout} />
             
             {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/30 z-20 lg:hidden"></div>}
 

@@ -13,7 +13,6 @@ export enum View {
     Profile = 'Profile',
     Setting = 'Setting',
     AccountManagement = 'AccountManagement',
-    Logout = 'Logout',
 }
 
 export interface AgendaItem {
