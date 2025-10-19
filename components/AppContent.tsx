@@ -13,12 +13,14 @@ import Calendar from './Calendar';
 import Library from './Library';
 import Message from './Message';
 import Settings from './Settings';
+import Result from './Result';
 import { useAuth } from '../state/AuthContext';
+import { useAppContext } from '../state/AppContext';
 import { 
-    DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, 
+    DashboardIcon, StudentsIcon, TeachersIcon, AttendanceIcon, FinanceIcon, ResultIcon,
     NoticeIcon, CalendarIcon, LibraryIcon, MessageIcon, ProfileIcon, 
     SettingsIcon, LogoutIcon, SearchIcon, NotificationIcon, MessageCircleIcon, 
-    DownloadIcon, MenuIcon, SparklesIcon, UsersIcon
+    DownloadIcon, MenuIcon, SparklesIcon, UsersIcon, XCircleIcon
 } from './icons';
 
 const allMenuItems = [
@@ -27,6 +29,7 @@ const allMenuItems = [
     { view: View.Students, label: 'Students', icon: StudentsIcon },
     { view: View.Attendance, label: 'Attendance', icon: AttendanceIcon },
     { view: View.Finance, label: 'Finance', icon: FinanceIcon },
+    { view: View.Result, label: 'Result', icon: ResultIcon },
     { view: View.Notice, label: 'Notice', icon: NoticeIcon },
     { view: View.Calendar, label: 'Calendar', icon: CalendarIcon },
     { view: View.Library, label: 'Library', icon: LibraryIcon },
@@ -65,18 +68,24 @@ const DownloadAppCard = () => (
 const Sidebar: React.FC<{ currentView: View; setView: (view: View) => void; isOpen: boolean; }> = ({ currentView, setView, isOpen }) => {
     const { user, logout } = useAuth();
     
-    let menuItems = allMenuItems;
-    if (user?.role === UserRole.Finance) {
-        const financeViews = [View.Finance, View.Notice, View.Calendar, View.Message];
-        menuItems = allMenuItems.filter(item => financeViews.includes(item.view));
-    }
-    
+    const rolePermissions: Record<UserRole, View[]> = {
+        [UserRole.Admin]: Object.values(View),
+        [UserRole.Teacher]: [View.Dashboard, View.Students, View.Attendance, View.Result, View.Notice, View.Calendar, View.Library, View.Message, View.LessonPlan, View.Profile, View.Setting],
+        [UserRole.Finance]: [View.Dashboard, View.Finance, View.Notice, View.Calendar, View.Message, View.Profile, View.Setting],
+        [UserRole.Student]: [View.Dashboard, View.Attendance, View.Result, View.Notice, View.Calendar, View.Library, View.Message, View.Profile, View.Setting],
+        [UserRole.Parent]: [View.Dashboard, View.Attendance, View.Result, View.Notice, View.Calendar, View.Message, View.Profile, View.Setting],
+        [UserRole.Staff]: [View.Dashboard, View.Notice, View.Calendar, View.Message, View.Profile, View.Setting],
+        [UserRole.Other]: [View.Dashboard, View.Profile, View.Setting],
+    };
+
+    const menuItems = user?.role ? allMenuItems.filter(item => rolePermissions[user.role]?.includes(item.view)) : [];
+
     const baseOtherItems = [
         { view: View.Profile, label: 'Profile', icon: ProfileIcon },
         { view: View.Setting, label: 'Setting', icon: SettingsIcon },
     ];
 
-    const otherItems = (user?.role === 'Manager')
+    const otherItems = (user?.role === UserRole.Admin)
         ? [...baseOtherItems, { view: View.AccountManagement, label: 'Account Section', icon: UsersIcon }]
         : baseOtherItems;
 
@@ -169,7 +178,15 @@ const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> 
         { view: View.Profile, icon: ProfileIcon },
     ];
 
-    if (user?.role === UserRole.Finance) {
+    if (user?.role === UserRole.Admin || user?.role === UserRole.Teacher) {
+        navItems = [
+            { view: View.Dashboard, icon: DashboardIcon },
+            { view: View.Students, icon: StudentsIcon },
+            { view: View.Result, icon: ResultIcon },
+            { view: View.Message, icon: MessageIcon },
+            { view: View.Profile, icon: ProfileIcon },
+        ];
+    } else if (user?.role === UserRole.Finance) {
         navItems = [
             { view: View.Finance, icon: FinanceIcon },
             { view: View.Notice, icon: NoticeIcon },
@@ -194,8 +211,71 @@ const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> 
     );
 }
 
+const FirestorePermissionError: React.FC<{ message: string; onRetry: () => void; }> = ({ message, onRetry }) => {
+    const projectId = "app-making-20c78"; // from firebaseConfig
+    const rulesUrl = `https://console.firebase.google.com/project/${projectId}/firestore/rules`;
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
+            <div className="bg-white p-8 rounded-lg shadow-2xl max-w-3xl border-t-8 border-red-500">
+                <div className="flex items-start gap-4">
+                    <XCircleIcon className="w-12 h-12 text-red-500 flex-shrink-0 mt-1" />
+                    <div>
+                        <h1 className="text-2xl font-bold text-neutral-800">Action Required: Database Permissions</h1>
+                        <p className="text-neutral-600 mt-2 text-sm">
+                            The application cannot connect to the database. This is a one-time setup step required for your Firebase project.
+                        </p>
+                        <p className="font-semibold text-red-600 text-sm mt-1">{message}</p>
+                    </div>
+                </div>
+                
+                <div className="mt-6 text-sm">
+                    <h2 className="font-semibold text-neutral-700 text-base mb-2">How to Fix This in 3 Steps</h2>
+                    <ol className="list-decimal list-inside space-y-4 text-neutral-600">
+                        <li>
+                            Click the button below to go directly to your Firestore Rules editor.
+                            <a href={rulesUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                                1. Open Firebase Console
+                            </a>
+                        </li>
+                        <li>
+                            In the editor, delete all existing text and paste the following code:
+                            <pre className="bg-neutral-100 text-neutral-800 p-3 rounded-md mt-2 text-xs overflow-x-auto">
+                                <code>
+{`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}`}
+                                </code>
+                            </pre>
+                        </li>
+                         <li>
+                            Click the **"Publish"** button in Firebase, then come back here and click **"Retry Connection"**.
+                            <button
+                                onClick={onRetry}
+                                className="mt-2 w-full text-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                3. Retry Connection
+                            </button>
+                         </li>
+                    </ol>
+                    <p className="text-xs text-neutral-500 mt-4">
+                        <strong>Why this is needed:</strong> By default, Firebase locks down your database. The code above grants access to any user who is logged in, which is safe for this development environment.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const AppContent: React.FC = () => {
     const { user } = useAuth();
+    const { error, retryConnection } = useAppContext();
     const [currentView, setCurrentView] = useState<View>(user?.role === UserRole.Finance ? View.Finance : View.Dashboard);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -210,6 +290,7 @@ const AppContent: React.FC = () => {
             case View.Teachers: return <TeacherList />;
             case View.Attendance: return <Attendance />;
             case View.Finance: return <Finance />;
+            case View.Result: return <Result />;
             case View.LessonPlan: return <LessonPlanHelper />;
             case View.AccountManagement: return <AccountManagement />;
             case View.Profile: return <Profile />;
@@ -221,6 +302,10 @@ const AppContent: React.FC = () => {
             default: return user?.role === UserRole.Finance ? <Finance /> : <Dashboard />;
         }
     };
+
+    if (error) {
+        return <FirestorePermissionError message={error} onRetry={retryConnection} />;
+    }
 
     return (
         <div className="min-h-screen flex w-full bg-brand-bg">

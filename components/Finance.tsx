@@ -104,7 +104,28 @@ const Finance: React.FC = () => {
 
     const displayedRecords = useMemo(() => {
         const recordsSource = view === 'income' ? filteredData.filteredFees : filteredData.filteredExpenses;
-        let records = recordsSource.filter(r => JSON.stringify(r).toLowerCase().includes(searchTerm.toLowerCase()));
+        let records = recordsSource.filter(r => {
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            if (!lowerSearchTerm) return true;
+
+            if (view === 'income') {
+                const fee = r as FeeCollection;
+                return (
+                    fee.studentName.toLowerCase().includes(lowerSearchTerm) ||
+                    fee.studentId.toLowerCase().includes(lowerSearchTerm) ||
+                    fee.status.toLowerCase().includes(lowerSearchTerm) ||
+                    fee.class.toLowerCase().includes(lowerSearchTerm)
+                );
+            } else {
+                const expense = r as Expense;
+                return (
+                    expense.description.toLowerCase().includes(lowerSearchTerm) ||
+                    expense.category.toLowerCase().includes(lowerSearchTerm) ||
+                    expense.status.toLowerCase().includes(lowerSearchTerm)
+                );
+            }
+        });
+
         if (sortConfig) {
             // Fix: Cast records to any[] to allow sorting by dynamic keys from different object types.
             (records as any[]).sort((a, b) => {

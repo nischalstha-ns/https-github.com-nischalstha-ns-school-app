@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebaseConfig';
 import { UserAccount } from '../types';
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+// Fix: Use scoped firebase packages for consistency.
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User as FirebaseUser } from '@firebase/auth';
+import { collection, query, where, getDocs } from '@firebase/firestore';
+
 
 interface AuthContextType {
     user: UserAccount | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (email: string, password?: string) => Promise<boolean>;
+    login: (identifier: string, password?: string) => Promise<boolean>;
     logout: () => void;
 }
 
@@ -46,18 +48,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => unsubscribe();
     }, []);
 
-    const login = async (email: string, password?: string): Promise<boolean> => {
-        if (!password) {
+    const login = async (identifier: string, password?: string): Promise<boolean> => {
+        if (!password || !identifier) {
             return false;
         }
         setIsLoading(true);
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            let userEmail = identifier;
+
+            // If the identifier doesn't look like an email, assume it's a full name and find the corresponding email.
+            if (!identifier.includes('@')) {
+                const usersRef = collection(db, "users");
+                const querySnapshot = await getDocs(usersRef);
+
+                if (querySnapshot.empty) {
+                    console.error("Login failed: No users found in the database to search by name.");
+                    setIsLoading(false);
+                    return false;
+                }
+
+                const matchingUsers = querySnapshot.docs.filter(doc => 
+                    doc.data().fullName.toLowerCase().includes(identifier.toLowerCase())
+                );
+                
+                if (matchingUsers.length !== 1) {
+                    const errorMessage = matchingUsers.length === 0 
+                        ? `No user found matching the name "${identifier}".`
+                        : `Ambiguous login: ${matchingUsers.length} users found matching "${identifier}". Please use a more specific name or your email address.`;
+                    console.error("Login failed:", errorMessage);
+                    setIsLoading(false);
+                    return false;
+                }
+                
+                userEmail = matchingUsers[0].data().email;
+            }
+
+            await signInWithEmailAndPassword(auth, userEmail, password);
             // onAuthStateChanged will handle setting the user state and clearing loading state
             return true;
         } catch (error) {
             console.error("Firebase login failed:", error);
-            setIsLoading(false); // Ensure loading is stopped on error
+            setIsLoading(false);
             return false;
         }
     };

@@ -81,9 +81,17 @@ const AccountManagement: React.FC = () => {
     
     const handleSaveUser = async (userData: Omit<UserAccount, 'id'> & { id?: string }) => {
         const { id, ...dataToSave } = userData;
-        if (id) await updateUser(id, dataToSave);
-        else await addUser(dataToSave);
-        setIsModalOpen(false);
+        try {
+            if (id) {
+                await updateUser(id, dataToSave);
+            } else {
+                await addUser(dataToSave);
+            }
+            setIsModalOpen(false);
+        } catch (error: any) {
+            console.error("Failed to save user:", error);
+            alert(`Failed to create user: ${error.message}`);
+        }
     };
     
     const handleBulkStatusUpdate = (status: 'Active' | 'Inactive') => handleAction(
@@ -94,7 +102,7 @@ const AccountManagement: React.FC = () => {
 
     useEffect(() => { setSelectedUsers([]) }, [searchTerm, selectedRole]);
     
-    if (currentUser?.role !== UserRole.Manager) {
+    if (currentUser?.role !== UserRole.Admin) {
         return <div className="p-8 text-center bg-white rounded-lg shadow-sm"><h2 className="text-xl font-bold text-red-600">Access Denied</h2><p className="text-neutral-600 mt-2">You do not have permission to view this page.</p></div>;
     }
 

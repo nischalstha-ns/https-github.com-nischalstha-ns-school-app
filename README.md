@@ -1,5 +1,7 @@
 # SchoolHub - Modern School Management Dashboard
 
+> ⚠️ **IMPORTANT SETUP NOTE:** If you see a "Missing or insufficient permissions" error after running the app, you **must** update your Firebase Firestore security rules. This is a required one-time setup step. Please see the [Troubleshooting](#-troubleshooting-common-errors) section below for the solution.
+
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
@@ -11,6 +13,22 @@ SchoolHub is a modern, responsive, and feature-rich dashboard designed to stream
 ## 📸 Screenshot
 
 
+
+## ❗ Troubleshooting Common Errors
+
+### "Missing or insufficient permissions" or "Firestore Permission Denied"
+
+This is the most common setup issue and is caused by Firebase's default security rules, which deny all access to your database. The project now includes a comprehensive `firestore.rules` file to solve this.
+
+**To fix this, you must deploy the new security rules:**
+
+1.  Open your Firebase Project.
+2.  Go to **Firestore Database** in the left sidebar.
+3.  Click on the **Rules** tab at the top.
+4.  Copy the entire content of the `firestore.rules` file from this project.
+5.  Paste it into the rules editor in the Firebase Console, replacing the existing content.
+6.  Click **Publish**.
+7.  Return to the application and click the "Retry Connection" button or refresh the page.
 
 ## ✨ Features
 
@@ -63,12 +81,38 @@ Follow these instructions to get a copy of the project up and running on your lo
 3.  **Set up environment variables:**
 
     Create a `.env` file in the root of the project and add the necessary API keys and Firebase configuration.
-    
-4.  **Run the development server:**
+
+4.  **Firebase Firestore Setup**
+
+    This project uses Firebase Firestore for its database. For the app to function correctly, you need to configure your Firestore Security Rules. **Please see the "Troubleshooting Common Errors" section above for detailed instructions.**
+
+5.  **Cloudinary Setup**
+
+    The application uses Cloudinary for image uploads (e.g., profile pictures). You must configure an **unsigned upload preset** for this to work.
+
+    1.  Log in to your [Cloudinary Dashboard](https://cloudinary.com/console).
+    2.  Go to **Settings** (the gear icon).
+    3.  Navigate to the **Upload** tab.
+    4.  Scroll down to **Upload presets**, and click **Add upload preset**.
+    5.  Change the **Signing Mode** from `Signed` to `Unsigned`.
+    6.  Enter `schoolhub_uploads` as the **Upload preset name**.
+    7.  Click **Save**.
+
+6.  **Run the development server:**
     ```bash
     npm run dev
     ```
     The application will be available at `http://localhost:3000`.
+
+## 🔥 Firebase Security Rules
+
+This project includes a `firestore.rules` file with a comprehensive set of security rules that implement Role-Based Access Control (RBAC). You must deploy these rules to your Firebase project to ensure the application works correctly and securely.
+
+**Important Implementation Note:**
+
+For these rules to be effective, it is a security best practice that the document ID for each user's profile in the `/users` collection should be the same as their Firebase Authentication User ID (`uid`).
+
+The current application code creates user documents with auto-generated IDs. To make the application fully secure and compatible with these rules, the user creation logic in `services/firestoreService.ts` should be updated to use `setDoc(doc(db, 'users', user.uid), data)` instead of `addDoc()`.
 
 ## 📂 Project Structure
 

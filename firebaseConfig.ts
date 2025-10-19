@@ -1,8 +1,8 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
+// Fix: Use scoped firebase packages to resolve module export errors. This change is applied across all firebase imports in this file.
+import { initializeApp } from "@firebase/app";
+import { getAnalytics, isSupported } from "@firebase/analytics";
+import { getFirestore } from "@firebase/firestore";
+import { getAuth } from "@firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -24,5 +24,11 @@ export const db = getFirestore(app);
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
 
-// Initialize Analytics
-const analytics = getAnalytics(app);
+// Initialize Analytics if supported in the browser
+isSupported().then((supported) => {
+    if (supported) {
+        getAnalytics(app);
+    } else {
+        console.log("Firebase Analytics is not supported in this environment.");
+    }
+});

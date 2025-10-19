@@ -81,7 +81,7 @@ const TeacherModal: React.FC<TeacherModalProps> = ({ teacher, onSave, onClose, i
                 const imageUrl = await uploadImage(imageFile);
                 finalData.avatar = imageUrl;
             } catch (error) {
-                alert("Image upload failed. Please try again.");
+                alert(`Image upload failed: ${error instanceof Error ? error.message : String(error)}`);
                 setIsUploading(false);
                 return;
             }

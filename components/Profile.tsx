@@ -58,7 +58,7 @@ const Profile: React.FC = () => {
                 alert("Profile picture updated successfully!");
             } catch (error) {
                 console.error("Error uploading image:", error);
-                alert("Failed to upload image.");
+                alert(`Failed to upload image: ${error instanceof Error ? error.message : String(error)}`);
             } finally {
                 setIsUploading(false);
             }

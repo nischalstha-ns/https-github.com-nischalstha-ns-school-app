@@ -60,7 +60,7 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ record, onSave, onClose, is
                 const imageUrl = await uploadImage(receiptFile);
                 finalData.receiptUrl = imageUrl;
             } catch (error) {
-                alert("Receipt upload failed. Please try again.");
+                alert(`Receipt upload failed: ${error instanceof Error ? error.message : String(error)}`);
                 setIsUploading(false);
                 return;
             }

@@ -1,5 +1,5 @@
 // Fix: Provide mock data for the application
-import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole, CalendarEvent, Book, Conversation, Expense } from './types';
+import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole, CalendarEvent, Book, Conversation, Expense, Result } from './types';
 
 const PLACEHOLDER_AVATAR = 'https://via.placeholder.com/150';
 
@@ -121,7 +121,7 @@ export const EXPENSES: Omit<Expense, 'id'>[] = [
 ];
 
 export const USERS: Omit<UserAccount, 'id'>[] = [
-    { fullName: 'Nischal Admin', email: 'nischalfancystore@gmail.com', password: '112233445566', role: UserRole.Manager, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/5` },
+    { fullName: 'Nischal Admin', email: 'nischalfancystore@gmail.com', password: '112233445566', role: UserRole.Admin, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/5` },
     { fullName: 'John Johnson', email: 'john.johnson@school.edu', password: 'password123', role: UserRole.Parent, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/1` },
     { fullName: 'Elizabeth Johnson', email: 'e.johnson@school.edu', password: 'password123', role: UserRole.Teacher, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/21` },
     { fullName: 'Alice Johnson', email: 'alice.j@school.com', password: 'password123', role: UserRole.Student, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/11` },
@@ -145,6 +145,66 @@ export const BOOKS: Omit<Book, 'id'>[] = [
     { title: 'Sapiens: A Brief History of Humankind', author: 'Yuval Noah Harari', isbn: '978-0062316097', genre: 'History', status: 'Issued', issuedTo: 'S-003', dueDate: '2030-09-28' },
     { title: "The Hitchhiker's Guide to the Galaxy", author: 'Douglas Adams', isbn: '978-0345391803', genre: 'Sci-Fi', status: 'Available' },
     { title: 'Pride and Prejudice', author: 'Jane Austen', isbn: '978-0141439518', genre: 'Romance', status: 'Available' },
+];
+
+export const RESULTS: Omit<Result, 'id'>[] = [
+    {
+        studentId: 'S-001',
+        studentName: 'Alice Johnson',
+        class: 10,
+        section: 'A',
+        examType: 'Mid-term',
+        date: '2030-09-15',
+        subjects: [
+            { name: 'Mathematics', marksObtained: 85, totalMarks: 100 },
+            { name: 'Science', marksObtained: 92, totalMarks: 100 },
+            { name: 'English', marksObtained: 88, totalMarks: 100 },
+            { name: 'History', marksObtained: 78, totalMarks: 100 },
+        ],
+        totalMarksObtained: 343,
+        totalPossibleMarks: 400,
+        percentage: 85.75,
+        grade: 'A',
+        remarks: 'Excellent performance overall.'
+    },
+    {
+        studentId: 'S-002',
+        studentName: 'Bob Williams',
+        class: 10,
+        section: 'A',
+        examType: 'Mid-term',
+        date: '2030-09-15',
+        subjects: [
+            { name: 'Mathematics', marksObtained: 72, totalMarks: 100 },
+            { name: 'Science', marksObtained: 65, totalMarks: 100 },
+            { name: 'English', marksObtained: 75, totalMarks: 100 },
+            { name: 'History', marksObtained: 68, totalMarks: 100 },
+        ],
+        totalMarksObtained: 280,
+        totalPossibleMarks: 400,
+        percentage: 70.00,
+        grade: 'B',
+        remarks: 'Good effort, can improve in Science.'
+    },
+    {
+        studentId: 'S-003',
+        studentName: 'Charlie Brown',
+        class: 9,
+        section: 'B',
+        examType: 'Mid-term',
+        date: '2030-09-15',
+        subjects: [
+            { name: 'Mathematics', marksObtained: 95, totalMarks: 100 },
+            { name: 'Science', marksObtained: 91, totalMarks: 100 },
+            { name: 'English', marksObtained: 85, totalMarks: 100 },
+            { name: 'Social Studies', marksObtained: 89, totalMarks: 100 },
+        ],
+        totalMarksObtained: 360,
+        totalPossibleMarks: 400,
+        percentage: 90.00,
+        grade: 'A+',
+        remarks: 'Outstanding performance.'
+    },
 ];
 
 export const CONVERSATIONS: Conversation[] = [

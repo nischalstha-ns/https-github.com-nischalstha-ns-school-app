@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import * as firestoreService from '../services/firestoreService';
-import { Student, Teacher, UserAccount, UserRole, AttendanceData, FeeCollection, Announcement, Book, AttendanceStatus, BulkGenerateAccountsResult, Expense } from '../types';
+import { Student, Teacher, UserAccount, UserRole, AttendanceData, FeeCollection, Announcement, Book, AttendanceStatus, BulkGenerateAccountsResult, Expense, Result } from '../types';
 
 interface AppState {
     students: Student[];
@@ -11,6 +11,7 @@ interface AppState {
     expenses: Expense[];
     announcements: Announcement[];
     books: Book[];
+    results: Result[];
     isLoading: boolean;
     error: string | null;
 }
@@ -38,10 +39,14 @@ interface AppContextType extends AppState {
     addBook: (data: Omit<Book, 'id'>) => Promise<void>;
     updateBook: (id: string, data: Partial<Omit<Book, 'id'>>) => Promise<void>;
     deleteBook: (id: string) => Promise<void>;
+    addResult: (data: Omit<Result, 'id'>) => Promise<void>;
+    updateResult: (id: string, data: Partial<Omit<Result, 'id'>>) => Promise<void>;
+    deleteResult: (id: string) => Promise<void>;
     bulkGenerateClassAccounts: (classNumber: number, usernamePattern: string, passwordPattern: string) => Promise<number>;
     bulkUpdateUserStatus: (userIds: string[], status: 'Active' | 'Inactive') => Promise<void>;
     seedAllData: () => Promise<void>;
     seedAttendanceData: (year: number, month: number) => Promise<void>;
+    retryConnection: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -56,38 +61,71 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         expenses: [],
         announcements: [],
         books: [],
+        results: [],
         isLoading: true,
         error: null,
     });
+    const [retryCount, setRetryCount] = useState(0);
+
+    const retryConnection = () => {
+        setState(s => ({ ...s, error: null, isLoading: true }));
+        setRetryCount(c => c + 1);
+    };
 
     useEffect(() => {
-        setState(s => ({ ...s, isLoading: true }));
+        setState(s => ({ ...s, isLoading: true, error: null }));
+
+        const handleError = (collectionName: string) => (error: any) => {
+             console.error(`Firestore error on ${collectionName}:`, error);
+            if (error.code === 'permission-denied') {
+                setState(s => ({ ...s, error: `Firestore Permission Denied for '${collectionName}'. Please check your Firestore security rules as per the README.md instructions.` }));
+            } else {
+                setState(s => ({ ...s, error: `An error occurred while fetching data from '${collectionName}': ${error.message}` }));
+            }
+            setState(s => ({ ...s, isLoading: false }));
+        };
 
         const unsubscribers = [
-            firestoreService.onStudentsChange(students => setState(s => ({ ...s, students }))),
-            firestoreService.onTeachersChange(teachers => setState(s => ({ ...s, teachers }))),
-            firestoreService.onUsersChange(users => setState(s => ({ ...s, users }))),
-            firestoreService.onFinanceDataChange(financeData => setState(s => ({ ...s, financeData }))),
-            firestoreService.onExpensesChange(expenses => setState(s => ({ ...s, expenses }))),
-            firestoreService.onAnnouncementsChange(announcements => setState(s => ({ ...s, announcements }))),
-            firestoreService.onBooksChange(books => setState(s => ({ ...s, books }))),
+            firestoreService.onStudentsChange(students => setState(s => ({ ...s, students })), handleError('students')),
+            firestoreService.onTeachersChange(teachers => setState(s => ({ ...s, teachers })), handleError('teachers')),
+            firestoreService.onUsersChange(users => setState(s => ({ ...s, users })), handleError('users')),
+            firestoreService.onFinanceDataChange(financeData => setState(s => ({ ...s, financeData })), handleError('finance')),
+            firestoreService.onExpensesChange(expenses => setState(s => ({ ...s, expenses })), handleError('expenses')),
+            firestoreService.onAnnouncementsChange(announcements => setState(s => ({ ...s, announcements })), handleError('announcements')),
+            firestoreService.onBooksChange(books => setState(s => ({ ...s, books })), handleError('books')),
+            firestoreService.onResultsChange(results => setState(s => ({ ...s, results })), handleError('results')),
         ];
 
         // Give a bit of time for initial data to load
-        setTimeout(() => setState(s => ({...s, isLoading: false})), 1500);
+        setTimeout(() => setState(s => {
+            // Only set isLoading to false if no error has occurred
+            if (s.error === null) {
+                return {...s, isLoading: false};
+            }
+            return s;
+        }), 1500);
 
         return () => unsubscribers.forEach(unsub => unsub());
-    }, []);
+    }, [retryCount]);
     
     const loadAttendanceForMonth = useCallback(async (year: number, month: number) => {
         const monthKey = `${year}-${month}`;
-        // No need to check if loaded, onSnapshot handles updates
+        
+        const handleError = (error: any) => {
+            console.error(`Firestore error on attendance:`, error);
+            if (error.code === 'permission-denied') {
+                setState(s => ({ ...s, error: `Firestore Permission Denied for 'attendance'. Please check your Firestore security rules as per the README.md instructions.` }));
+            } else {
+                setState(s => ({ ...s, error: `An error occurred while fetching data from 'attendance': ${error.message}` }));
+            }
+        };
+        
         firestoreService.onAttendanceChange(year, month, (data) => {
             setState(s => ({
                 ...s,
                 attendance: { ...s.attendance, [monthKey]: data }
             }));
-        });
+        }, handleError);
     }, []);
 
     const bulkGenerateClassAccounts = async (classNumber: number, usernamePattern: string, passwordPattern: string): Promise<number> => {
@@ -129,6 +167,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const value: AppContextType = {
         ...state,
+        retryConnection,
         addStudent: (data) => firestoreService.addStudent(data).then(),
         updateStudent: firestoreService.updateStudent,
         deleteStudent: firestoreService.deleteStudent,
@@ -149,6 +188,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addBook: (data) => firestoreService.addBook(data).then(),
         updateBook: firestoreService.updateBook,
         deleteBook: firestoreService.deleteBook,
+        addResult: (data) => firestoreService.addResult(data).then(),
+        updateResult: firestoreService.updateResult,
+        deleteResult: firestoreService.deleteResult,
         upsertAttendance: firestoreService.upsertAttendance,
         loadAttendanceForMonth,
         bulkGenerateClassAccounts,

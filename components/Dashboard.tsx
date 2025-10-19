@@ -376,7 +376,7 @@ const Dashboard: React.FC = () => {
         return <div className="text-center p-8">Loading dashboard data...</div>;
     }
 
-    const staffCount = users.filter(u => u.role === UserRole.Staff || u.role === UserRole.Manager || u.role === UserRole.Finance).length;
+    const staffCount = users.filter(u => u.role === UserRole.Staff || u.role === UserRole.Admin || u.role === UserRole.Finance).length;
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">

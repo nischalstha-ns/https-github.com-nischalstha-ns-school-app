@@ -5,6 +5,7 @@ export enum View {
     Students = 'Students',
     Attendance = 'Attendance',
     Finance = 'Finance',
+    Result = 'Result',
     Notice = 'Notice',
     Calendar = 'Calendar',
     Library = 'Library',
@@ -143,12 +144,12 @@ export interface FeeChartDataPoint {
 }
 
 export enum UserRole {
+    Admin = 'Admin',
     Student = 'Student',
     Parent = 'Parent',
     Teacher = 'Teacher',
     Staff = 'Staff',
     Finance = 'Finance',
-    Manager = 'Manager',
     Other = 'Other',
 }
 
@@ -197,6 +198,28 @@ export interface Conversation {
         sender: 'me' | 'other';
         timestamp: string;
     }[];
+}
+
+export interface SubjectResult {
+    name: string;
+    marksObtained: number;
+    totalMarks: number;
+}
+
+export interface Result {
+    id: string;
+    studentId: string;
+    studentName: string;
+    class: number;
+    section: 'A' | 'B' | 'C';
+    examType: 'Unit Test' | 'Mid-term' | 'Final';
+    date: string; // YYYY-MM-DD
+    subjects: SubjectResult[];
+    totalMarksObtained: number;
+    totalPossibleMarks: number;
+    percentage: number;
+    grade: string;
+    remarks?: string;
 }
 
 export interface BulkGenerateAccountsResult {

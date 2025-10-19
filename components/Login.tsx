@@ -51,7 +51,7 @@ const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
 
 const Login: React.FC = () => {
     const { login } = useAuth();
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -63,9 +63,9 @@ const Login: React.FC = () => {
         e.preventDefault();
         setError('');
         setIsLoggingIn(true);
-        const success = await login(email, password);
+        const success = await login(identifier, password);
         if (!success) {
-            setError('Invalid email or password.');
+            setError('Invalid username/email or password.');
             setPassword('');
         }
         setIsLoggingIn(false);
@@ -92,15 +92,15 @@ const Login: React.FC = () => {
                  <div className="bg-white mt-8 p-8 rounded-2xl shadow-lg">
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-[#333333]">Email Address</label>
+                            <label htmlFor="identifier" className="block text-sm font-medium text-[#333333]">Email or Full Name</label>
                             <input 
-                                type="email" 
-                                id="email" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)} 
+                                type="text" 
+                                id="identifier" 
+                                value={identifier} 
+                                onChange={(e) => setIdentifier(e.target.value)} 
                                 required 
                                 className="mt-1 block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500"
-                                placeholder="you@example.com"
+                                placeholder="e.g., nischalfancystore@gmail.com or Nischal Admin"
                             />
                         </div>
                         <div>
