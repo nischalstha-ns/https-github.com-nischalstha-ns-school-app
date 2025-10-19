@@ -1,14 +1,15 @@
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, writeBatch, getDoc, onSnapshot } from "firebase/firestore";
 import { db, auth } from '../firebaseConfig';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection, UserAccount, Announcement, Book, UserRole, BulkGenerateAccountsResult } from '../types';
+import { Student, Teacher, AttendanceData, AttendanceStatus, FeeCollection, UserAccount, Announcement, Book, UserRole, BulkGenerateAccountsResult, Expense } from '../types';
 import { 
     STUDENTS as mockStudents, 
     TEACHERS as mockTeachers, 
     FEE_COLLECTION_DATA as mockFinanceData, 
     USERS as mockUsers, 
     ANNOUNCEMENTS as mockAnnouncements, 
-    BOOKS as mockBooks 
+    BOOKS as mockBooks,
+    EXPENSES as mockExpenses
 } from '../constants';
 
 const getCollectionData = <T>(collectionName: string, idField: string = 'id'): Promise<T[]> => {
@@ -87,6 +88,16 @@ export const addFinanceRecord = (data: Omit<FeeCollection, 'id'>) => addCollecti
 export const updateFinanceRecord = (id: string, data: Partial<Omit<FeeCollection, 'id'>>) => updateCollectionDoc('finance', id, data);
 export const deleteFinanceRecord = (id: string) => deleteCollectionDoc('finance', id);
 
+// --- Expense Functions ---
+export const onExpensesChange = (callback: (data: Expense[]) => void) => {
+    return onSnapshot(collection(db, 'expenses'), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
+    });
+};
+export const addExpense = (data: Omit<Expense, 'id'>) => addCollectionDoc('expenses', data);
+export const updateExpense = (id: string, data: Partial<Omit<Expense, 'id'>>) => updateCollectionDoc('expenses', id, data);
+export const deleteExpense = (id: string) => deleteCollectionDoc('expenses', id);
+
 // --- User Account Functions ---
 export const onUsersChange = (callback: (users: UserAccount[]) => void) => {
     return onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -145,6 +156,7 @@ export const seedAllData = async () => {
     await seedCollection('finance', mockFinanceData);
     await seedCollection('announcements', mockAnnouncements);
     await seedCollection('books', mockBooks);
+    await seedCollection('expenses', mockExpenses);
 
     // Custom seeding for users to sync with Firebase Auth
     const collectionName = 'users';

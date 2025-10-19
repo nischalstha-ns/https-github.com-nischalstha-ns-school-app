@@ -10,6 +10,7 @@ interface FinanceModalProps {
 }
 
 const FinanceModal: React.FC<FinanceModalProps> = ({ record, onSave, onClose, isOpen }) => {
+    // Fix: Added the missing 'date' property to align with the FeeCollection type.
     const getInitialFormData = (): Omit<FeeCollection, 'id'> => ({
         studentName: '',
         studentId: '',
@@ -20,6 +21,7 @@ const FinanceModal: React.FC<FinanceModalProps> = ({ record, onSave, onClose, is
         miscellaneousFee: 0,
         totalAmount: 0,
         status: 'Pending',
+        date: new Date().toISOString().split('T')[0],
     });
 
     const [formData, setFormData] = useState<Omit<FeeCollection, 'id'>>(getInitialFormData());

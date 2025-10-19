@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import * as firestoreService from '../services/firestoreService';
-import { Student, Teacher, UserAccount, UserRole, AttendanceData, FeeCollection, Announcement, Book, AttendanceStatus, BulkGenerateAccountsResult } from '../types';
+import { Student, Teacher, UserAccount, UserRole, AttendanceData, FeeCollection, Announcement, Book, AttendanceStatus, BulkGenerateAccountsResult, Expense } from '../types';
 
 interface AppState {
     students: Student[];
@@ -8,6 +8,7 @@ interface AppState {
     users: UserAccount[];
     attendance: { [key: string]: AttendanceData[] };
     financeData: FeeCollection[];
+    expenses: Expense[];
     announcements: Announcement[];
     books: Book[];
     isLoading: boolean;
@@ -29,6 +30,9 @@ interface AppContextType extends AppState {
     addFinanceRecord: (data: Omit<FeeCollection, 'id'>) => Promise<void>;
     updateFinanceRecord: (id: string, data: Partial<Omit<FeeCollection, 'id'>>) => Promise<void>;
     deleteFinanceRecord: (id: string) => Promise<void>;
+    addExpense: (data: Omit<Expense, 'id'>) => Promise<void>;
+    updateExpense: (id: string, data: Partial<Omit<Expense, 'id'>>) => Promise<void>;
+    deleteExpense: (id: string) => Promise<void>;
     addAnnouncement: (data: Omit<Announcement, 'id'>) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
     addBook: (data: Omit<Book, 'id'>) => Promise<void>;
@@ -49,6 +53,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         users: [],
         attendance: {},
         financeData: [],
+        expenses: [],
         announcements: [],
         books: [],
         isLoading: true,
@@ -63,6 +68,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             firestoreService.onTeachersChange(teachers => setState(s => ({ ...s, teachers }))),
             firestoreService.onUsersChange(users => setState(s => ({ ...s, users }))),
             firestoreService.onFinanceDataChange(financeData => setState(s => ({ ...s, financeData }))),
+            firestoreService.onExpensesChange(expenses => setState(s => ({ ...s, expenses }))),
             firestoreService.onAnnouncementsChange(announcements => setState(s => ({ ...s, announcements }))),
             firestoreService.onBooksChange(books => setState(s => ({ ...s, books }))),
         ];
@@ -135,6 +141,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addFinanceRecord: (data) => firestoreService.addFinanceRecord(data).then(),
         updateFinanceRecord: firestoreService.updateFinanceRecord,
         deleteFinanceRecord: firestoreService.deleteFinanceRecord,
+        addExpense: (data) => firestoreService.addExpense(data).then(),
+        updateExpense: firestoreService.updateExpense,
+        deleteExpense: firestoreService.deleteExpense,
         addAnnouncement: (data) => firestoreService.addAnnouncement(data).then(),
         deleteAnnouncement: firestoreService.deleteAnnouncement,
         addBook: (data) => firestoreService.addBook(data).then(),

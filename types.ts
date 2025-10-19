@@ -124,6 +124,17 @@ export interface FeeCollection {
     miscellaneousFee: number;
     totalAmount: number;
     status: 'Paid' | 'Pending' | 'Overdue';
+    date: string; // YYYY-MM-DD format for filtering
+}
+
+export interface Expense {
+    id: string;
+    description: string;
+    category: 'Salaries' | 'Utilities' | 'Supplies' | 'Maintenance' | 'Other';
+    date: string; // YYYY-MM-DD
+    amount: number;
+    status: 'Paid' | 'Pending';
+    receiptUrl?: string;
 }
 
 export interface FeeChartDataPoint {

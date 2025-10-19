@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from '../types';
+import { View, UserRole } from '../types';
 import Dashboard from './Dashboard';
 import StudentList from './StudentList';
 import TeacherList from './TeacherList';
@@ -21,7 +21,7 @@ import {
     DownloadIcon, MenuIcon, SparklesIcon, UsersIcon
 } from './icons';
 
-const menuItems = [
+const allMenuItems = [
     { view: View.Dashboard, label: 'Dashboard', icon: DashboardIcon },
     { view: View.Teachers, label: 'Teachers', icon: TeachersIcon },
     { view: View.Students, label: 'Students', icon: StudentsIcon },
@@ -34,7 +34,7 @@ const menuItems = [
     { view: View.LessonPlan, label: 'Lesson Helper', icon: SparklesIcon },
 ];
 
-const NavButton: React.FC<{ item: typeof menuItems[0]; currentView: View; setView: (view: View) => void; }> = ({ item, currentView, setView }) => {
+const NavButton: React.FC<{ item: typeof allMenuItems[0]; currentView: View; setView: (view: View) => void; }> = ({ item, currentView, setView }) => {
     const isActive = item.view === currentView;
     return (
         <button
@@ -64,6 +64,12 @@ const DownloadAppCard = () => (
 
 const Sidebar: React.FC<{ currentView: View; setView: (view: View) => void; isOpen: boolean; }> = ({ currentView, setView, isOpen }) => {
     const { user, logout } = useAuth();
+    
+    let menuItems = allMenuItems;
+    if (user?.role === UserRole.Finance) {
+        const financeViews = [View.Finance, View.Notice, View.Calendar, View.Message];
+        menuItems = allMenuItems.filter(item => financeViews.includes(item.view));
+    }
     
     const baseOtherItems = [
         { view: View.Profile, label: 'Profile', icon: ProfileIcon },
@@ -154,13 +160,25 @@ const Footer = () => (
 );
 
 const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> = ({ currentView, setView }) => {
-    const navItems = [
+    const { user } = useAuth();
+    let navItems = [
         { view: View.Dashboard, icon: DashboardIcon },
         { view: View.Students, icon: StudentsIcon },
         { view: View.Teachers, icon: TeachersIcon },
         { view: View.Message, icon: MessageIcon },
         { view: View.Profile, icon: ProfileIcon },
     ];
+
+    if (user?.role === UserRole.Finance) {
+        navItems = [
+            { view: View.Finance, icon: FinanceIcon },
+            { view: View.Notice, icon: NoticeIcon },
+            { view: View.Calendar, icon: CalendarIcon },
+            { view: View.Message, icon: MessageIcon },
+            { view: View.Profile, icon: ProfileIcon },
+        ];
+    }
+
 
     return (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 flex justify-around p-2 z-20">
@@ -177,7 +195,8 @@ const BottomNav: React.FC<{ currentView: View; setView: (view: View) => void }> 
 }
 
 const AppContent: React.FC = () => {
-    const [currentView, setCurrentView] = useState<View>(View.Dashboard);
+    const { user } = useAuth();
+    const [currentView, setCurrentView] = useState<View>(user?.role === UserRole.Finance ? View.Finance : View.Dashboard);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -199,7 +218,7 @@ const AppContent: React.FC = () => {
             case View.Library: return <Library />;
             case View.Message: return <Message />;
             case View.Setting: return <Settings />;
-            default: return <Dashboard />;
+            default: return user?.role === UserRole.Finance ? <Finance /> : <Dashboard />;
         }
     };
 

@@ -1,5 +1,5 @@
 // Fix: Provide mock data for the application
-import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole, CalendarEvent, Book, Conversation } from './types';
+import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, Student, Teacher, Announcement, FeeCollection, FeeChartDataPoint, UserAccount, UserRole, CalendarEvent, Book, Conversation, Expense } from './types';
 
 const PLACEHOLDER_AVATAR = 'https://via.placeholder.com/150';
 
@@ -94,7 +94,7 @@ export const FEES_CHART_DATA: FeeChartDataPoint[] = [
     { month: 'Dec', amount: 6800 },
 ];
 
-export const FEE_COLLECTION_DATA: Omit<FeeCollection, 'id'>[] = [
+export const FEE_COLLECTION_DATA: Omit<FeeCollection, 'id' | 'date'>[] = [
     { studentName: 'Sophia Wilson', studentId: '2019-03-017', avatar: `${PLACEHOLDER_AVATAR}/31`, class: '11A', tuitionFee: 4500, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5000, status: 'Paid' },
     { studentName: 'Ethan Lee', studentId: '2019-01-016', avatar: `${PLACEHOLDER_AVATAR}/32`, class: '10B', tuitionFee: 4500, activitiesFee: 250, miscellaneousFee: 150, totalAmount: 4900, status: 'Pending' },
     { studentName: 'Michael Brown', studentId: '2019-01-012', avatar: `${PLACEHOLDER_AVATAR}/33`, class: '12 AP Calculus', tuitionFee: 4800, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5300, status: 'Paid' },
@@ -107,6 +107,17 @@ export const FEE_COLLECTION_DATA: Omit<FeeCollection, 'id'>[] = [
     { studentName: 'Emily Peterson', studentId: '2019-02-011', avatar: `${PLACEHOLDER_AVATAR}/40`, class: '10A', tuitionFee: 4500, activitiesFee: 250, miscellaneousFee: 150, totalAmount: 4900, status: 'Pending' },
     { studentName: 'Jacob Rodriguez', studentId: '2019-04-020', avatar: `${PLACEHOLDER_AVATAR}/41`, class: '11B', tuitionFee: 4500, activitiesFee: 300, miscellaneousFee: 200, totalAmount: 5000, status: 'Paid' },
     { studentName: 'Mia Wilson', studentId: '2019-05-021', avatar: `${PLACEHOLDER_AVATAR}/42`, class: '9C', tuitionFee: 4400, activitiesFee: 220, miscellaneousFee: 120, totalAmount: 4740, status: 'Pending' },
+];
+
+export const EXPENSES: Omit<Expense, 'id'>[] = [
+    { description: 'Teacher Salaries - September', category: 'Salaries', date: '2030-09-30', amount: 55000, status: 'Paid', receiptUrl: '' },
+    { description: 'Electricity Bill', category: 'Utilities', date: '2030-09-25', amount: 2500, status: 'Paid', receiptUrl: '' },
+    { description: 'Office & Classroom Supplies', category: 'Supplies', date: '2030-09-15', amount: 3200, status: 'Paid', receiptUrl: '' },
+    { description: 'Campus Plumbing Repairs', category: 'Maintenance', date: '2030-09-20', amount: 1800, status: 'Pending', receiptUrl: '' },
+    { description: 'Internet & Phone Bill', category: 'Utilities', date: '2030-09-28', amount: 800, status: 'Paid', receiptUrl: '' },
+    { description: 'Janitorial Staff Salaries', category: 'Salaries', date: '2030-09-30', amount: 8000, status: 'Paid', receiptUrl: '' },
+    { description: 'New Library Books Purchase', category: 'Supplies', date: '2030-09-10', amount: 4500, status: 'Paid', receiptUrl: '' },
+    { description: 'Annual Software Licensing', category: 'Other', date: '2030-09-05', amount: 7300, status: 'Paid', receiptUrl: '' },
 ];
 
 export const USERS: Omit<UserAccount, 'id'>[] = [
