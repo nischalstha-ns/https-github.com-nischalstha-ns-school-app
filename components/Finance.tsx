@@ -22,7 +22,8 @@ const ExpensePieChart: React.FC<{ expenses: Expense[] }> = ({ expenses }) => {
             acc[category] = (acc[category] || 0) + amount;
             return acc;
         }, {} as Record<string, number>);
-        return Object.entries(data).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+        // Fix: Explicitly cast values to numbers in sort function to prevent type errors with arithmetic operations.
+        return Object.entries(data).map(([name, value]) => ({ name, value })).sort((a,b) => Number(b.value) - Number(a.value));
     }, [expenses]);
 
     const total = categoryData.reduce((sum, d) => sum + d.value, 0);
@@ -112,8 +113,11 @@ const Finance: React.FC = () => {
                 if (typeof valA === 'string' && typeof valB === 'string') {
                     return sortConfig.direction === 'ascending' ? valA.localeCompare(valB) : valB.localeCompare(valA);
                 }
-                if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
-                if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+                // Fix: Added explicit check for number types to ensure proper sorting and type safety.
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+                    if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
                 return 0;
             });
         }
@@ -160,7 +164,8 @@ const Finance: React.FC = () => {
         return <span className={`flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full w-fit ${styles[status]}`}><span className={`w-2 h-2 rounded-full ${dotStyles[status]}`}></span>{status}</span>;
     };
 
-    const renderSortArrow = (key: keyof (FeeCollection | Expense)) => {
+    // Fix: Changed key type to string to accept keys from both FeeCollection and Expense.
+    const renderSortArrow = (key: string) => {
         if (!sortConfig || sortConfig.key !== key) return null;
         return sortConfig.direction === 'ascending' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />;
     };
@@ -199,13 +204,13 @@ const Finance: React.FC = () => {
                         {view === 'income' ? (
                             <>
                                 {/* Fix: The onClick handler now passes a string key, compatible with the updated requestSort function. */}
-                                <thead className="text-xs uppercase bg-neutral-50/80"><tr>{(['studentName', 'class', 'totalAmount', 'status', 'date'] as Array<keyof FeeCollection>).map(key => <th key={key} className="p-4 font-semibold cursor-pointer" onClick={() => requestSort(key)}><div className="flex items-center gap-1">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {renderSortArrow(key)}</div></th>)}</tr></thead>
+                                <thead className="text-xs uppercase bg-neutral-50/80"><tr>{(['studentName', 'class', 'totalAmount', 'status', 'date'] as (keyof FeeCollection)[]).map(key => <th key={key} className="p-4 font-semibold cursor-pointer" onClick={() => requestSort(key)}><div className="flex items-center gap-1">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {renderSortArrow(key)}</div></th>)}</tr></thead>
                                 <tbody>{paginatedRecords.map(fee => (<tr key={fee.id} className="border-b last:border-b-0 hover:bg-primary-light/30"><td className="p-4"><div className="flex items-center gap-3"><img src={(fee as FeeCollection).avatar} alt={(fee as FeeCollection).studentName} className="w-9 h-9 rounded-full"/><div><p className="font-semibold">{(fee as FeeCollection).studentName}</p><p className="text-xs">{(fee as FeeCollection).studentId}</p></div></div></td><td className="p-4">{(fee as FeeCollection).class}</td><td className="p-4 font-semibold">{formatCurrency((fee as FeeCollection).totalAmount)}</td><td className="p-4">{getStatusPill(fee.status)}</td><td className="p-4">{(fee as FeeCollection).date}</td></tr>))}</tbody>
                             </>
                         ) : (
                             <>
                                 {/* Fix: The onClick handler now passes a string key, compatible with the updated requestSort function. */}
-                                <thead className="text-xs uppercase bg-neutral-50/80"><tr>{(['description', 'category', 'date', 'amount', 'status', 'receiptUrl'] as Array<keyof Expense>).map(key => <th key={key} className="p-4 font-semibold cursor-pointer" onClick={() => requestSort(key)}><div className="flex items-center gap-1">{key === 'receiptUrl' ? 'Receipt' : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {renderSortArrow(key)}</div></th>)}<th className="p-4 font-semibold text-center">Action</th></tr></thead>
+                                <thead className="text-xs uppercase bg-neutral-50/80"><tr>{(['description', 'category', 'date', 'amount', 'status', 'receiptUrl'] as (keyof Expense)[]).map(key => <th key={key} className="p-4 font-semibold cursor-pointer" onClick={() => requestSort(key)}><div className="flex items-center gap-1">{key === 'receiptUrl' ? 'Receipt' : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {renderSortArrow(key)}</div></th>)}<th className="p-4 font-semibold text-center">Action</th></tr></thead>
                                 <tbody>{paginatedRecords.map(exp => (<tr key={exp.id} className="border-b last:border-b-0 hover:bg-primary-light/30"><td className="p-4 font-semibold">{(exp as Expense).description}</td><td className="p-4">{(exp as Expense).category}</td><td className="p-4">{exp.date}</td><td className="p-4 font-semibold">{formatCurrency((exp as Expense).amount)}</td><td className="p-4">{getStatusPill(exp.status)}</td><td className="p-4">{(exp as Expense).receiptUrl ? <a href={(exp as Expense).receiptUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"><PaperclipIcon className="w-5 h-5"/></a> : 'N/A'}</td><td className="p-4"><div className="flex items-center justify-center gap-4"><button onClick={() => {setSelectedRecord(exp as Expense); setIsExpenseModalOpen(true);}} className="text-neutral-500 hover:text-accent-yellow"><EditIcon className="w-5 h-5"/></button><button onClick={() => {setRecordToDelete({id: exp.id, type: 'expenses'}); setIsConfirmModalOpen(true);}} className="text-neutral-500 hover:text-accent-red"><DeleteIcon className="w-5 h-5"/></button></div></td></tr>))}</tbody>
                             </>
                         )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { XIcon } from './icons';
+import { XIcon, EyeIcon, EyeOffIcon } from './icons';
 import { useAuth } from '../state/AuthContext';
 import { seedAllData } from '../services/firestoreService';
 
@@ -57,6 +57,7 @@ const Login: React.FC = () => {
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -65,6 +66,7 @@ const Login: React.FC = () => {
         const success = await login(email, password);
         if (!success) {
             setError('Invalid email or password.');
+            setPassword('');
         }
         setIsLoggingIn(false);
     };
@@ -106,15 +108,29 @@ const Login: React.FC = () => {
                                 <label htmlFor="password" className="block text-sm font-medium text-[#333333]">Password</label>
                                 <button type="button" onClick={() => setIsForgotModalOpen(true)} className="text-sm text-[#3a6ff7] hover:underline font-medium">Forgot password?</button>
                             </div>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                value={password} 
-                                onChange={(e) => setPassword(e.target.value)} 
-                                required 
-                                className="mt-1 block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500"
-                                placeholder="••••••••"
-                            />
+                            <div className="relative mt-1">
+                                <input 
+                                    type={isPasswordVisible ? 'text' : 'password'}
+                                    id="password" 
+                                    value={password} 
+                                    onChange={(e) => setPassword(e.target.value)} 
+                                    required 
+                                    className="block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500 pr-12"
+                                    placeholder="••••••••"
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsPasswordVisible(!isPasswordVisible)} 
+                                    className="absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 hover:text-neutral-700"
+                                    aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeOffIcon className="w-5 h-5" />
+                                    ) : (
+                                        <EyeIcon className="w-5 h-5" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {error && <p className="text-sm text-red-600 text-center">{error}</p>}
