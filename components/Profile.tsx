@@ -1,40 +1,26 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserAccount } from '../types';
-import { getAdminProfile, updateUser } from '../services/firestoreService';
 import { uploadImage } from '../services/cloudinaryService';
 import { EditIcon } from './icons';
+import { useAppContext } from '../state/AppContext';
+import { useAuth } from '../state/AuthContext';
 
 const Profile: React.FC = () => {
-    // For now, we are simulating that 'Linda Adora' is the logged-in admin.
-    // In a real app, you would get the user's email or ID from your authentication state.
-    const ADMIN_EMAIL = 'linda.adora@school.edu';
+    const { user: authUser } = useAuth();
+    const { updateUser } = useAppContext();
 
-    const [profile, setProfile] = useState<UserAccount | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [profile, setProfile] = useState<UserAccount | null>(authUser);
+    const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [fullName, setFullName] = useState('');
+    const [fullName, setFullName] = useState(authUser?.fullName || '');
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchProfile = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const adminProfile = await getAdminProfile(ADMIN_EMAIL);
-            setProfile(adminProfile);
-            if (adminProfile) {
-                setFullName(adminProfile.fullName);
-            }
-        } catch (error) {
-            console.error("Error fetching admin profile:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
+        setProfile(authUser);
+        setFullName(authUser?.fullName || '');
+    }, [authUser]);
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFullName(e.target.value);
@@ -45,7 +31,7 @@ const Profile: React.FC = () => {
         setIsSaving(true);
         try {
             await updateUser(profile.id, { fullName });
-            // Optimistically update UI or re-fetch
+            // The context update will re-render if needed, but we can also update local state for immediate feedback
             setProfile(prev => prev ? { ...prev, fullName } : null);
             alert("Profile name updated successfully!");
         } catch (error) {
@@ -58,7 +44,6 @@ const Profile: React.FC = () => {
     
     const handlePasswordChange = () => {
         // This is a placeholder. Real password changes require Firebase Authentication.
-        // For example: `const auth = getAuth(); updatePassword(auth.currentUser, newPassword);`
         alert("Password updated successfully! (Simulation)");
     };
 
@@ -85,7 +70,7 @@ const Profile: React.FC = () => {
     }
 
     if (!profile) {
-        return <div className="text-center p-8 text-red-500">Could not load admin profile. Ensure the user '{ADMIN_EMAIL}' exists in the 'users' collection.</div>;
+        return <div className="text-center p-8 text-red-500">Could not load user profile.</div>;
     }
 
     return (

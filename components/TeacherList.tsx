@@ -1,19 +1,17 @@
 // Fix: Create the content for the missing TeacherList.tsx file.
 // This component provides a full-featured UI for managing the list of teachers.
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Teacher } from '../types';
 import { SearchIcon, PlusIcon, EditIcon, DeleteIcon, ArrowUpIcon, ArrowDownIcon, UploadIcon, DownloadIcon } from './icons';
 import TeacherModal from './TeacherModal';
 import ConfirmationModal from './ConfirmationModal';
 import ImportModal from './ImportModal';
-import { getTeachers, addTeacher, updateTeacher, deleteTeacher, seedTeachersDatabase, getTeachersCollectionSize } from '../services/firestoreService';
+import { useAppContext } from '../state/AppContext';
 
 
 const TeacherList: React.FC = () => {
-    const [teachers, setTeachers] = useState<Teacher[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { teachers, isLoading, addTeacher, updateTeacher, deleteTeacher, seedAllData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isSeedButtonDisabled, setIsSeedButtonDisabled] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: keyof Teacher; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
     
@@ -26,27 +24,6 @@ const TeacherList: React.FC = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-
-    const fetchTeachers = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const teachersFromDb = await getTeachers();
-            setTeachers(teachersFromDb);
-        } catch (error) {
-            console.error("Error fetching teachers:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchTeachers();
-        getTeachersCollectionSize().then(size => {
-            if (size > 0) {
-                setIsSeedButtonDisabled(true);
-            }
-        });
-    }, [fetchTeachers]);
 
     const filteredTeachers = useMemo(() => {
         return teachers.filter(teacher =>
@@ -111,7 +88,6 @@ const TeacherList: React.FC = () => {
     const confirmDelete = async () => {
         if (teacherToDelete) {
             await deleteTeacher(teacherToDelete);
-            fetchTeachers();
         }
         setIsConfirmModalOpen(false);
         setTeacherToDelete(null);
@@ -129,16 +105,13 @@ const TeacherList: React.FC = () => {
         } else {
             await addTeacher(processedData);
         }
-        fetchTeachers();
         setIsTeacherModalOpen(false);
     };
 
     const handleSeedDatabase = async () => {
         setIsSeeding(true);
         try {
-            await seedTeachersDatabase();
-            await fetchTeachers();
-            setIsSeedButtonDisabled(true);
+            await seedAllData();
         } catch(e) {
             console.error("Failed to seed database: ", e);
             alert("Failed to seed database. Check console for errors.");
@@ -211,15 +184,11 @@ const TeacherList: React.FC = () => {
                 }).filter((t): t is Omit<Teacher, 'id'> => t !== null && !!t.name && !!t.email);
                 
                 if (newTeachersData.length > 0) {
-                    setIsLoading(true);
                     await Promise.all(newTeachersData.map(teacher => addTeacher(teacher)));
-                    await fetchTeachers();
                 }
             } catch (error) {
                 console.error("Error importing teachers:", error);
                 alert("Failed to import teachers. Please check the file format and content.");
-            } finally {
-                setIsLoading(false);
             }
         };
         reader.readAsText(file);
@@ -261,15 +230,15 @@ const TeacherList: React.FC = () => {
                 </div>
             </div>
 
-            {!isSeedButtonDisabled && (
+            {!isLoading && teachers.length === 0 && (
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
                     <div className="flex">
                         <div className="py-1">
                             <p className="font-bold">Database is Empty</p>
-                            <p className="text-sm">Click the seed button to populate your Firestore database with initial teacher data.</p>
+                            <p className="text-sm">Click the seed button to populate your database with initial teacher data.</p>
                         </div>
                         <div className="ml-auto pl-3">
-                             <button onClick={handleSeedDatabase} disabled={isSeeding || isSeedButtonDisabled} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
+                             <button onClick={handleSeedDatabase} disabled={isSeeding} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
                                 {isSeeding ? 'Seeding...' : 'Seed Database'}
                             </button>
                         </div>

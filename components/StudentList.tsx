@@ -1,6 +1,6 @@
 // Fix: Create the content for the missing StudentList.tsx file.
 // This component provides a full-featured UI for managing the list of students.
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Student } from '../types';
 import { SearchIcon, PlusIcon, UploadIcon, EditIcon, DeleteIcon, ArrowUpIcon, ArrowDownIcon, DownloadIcon, EyeIcon } from './icons';
 import StudentModal from './StudentModal';
@@ -8,7 +8,7 @@ import StudentDetailView from './StudentDetailView';
 import ConfirmationModal from './ConfirmationModal';
 import ImportModal from './ImportModal';
 import { extractStudentsFromFile } from '../services/geminiService';
-import { getStudents, addStudent, updateStudent, deleteStudent, seedStudentsDatabase, getStudentsCollectionSize } from '../services/firestoreService';
+import { useAppContext } from '../state/AppContext';
 
 const classDisplayMap: { [key: number]: string } = {
     '-2': 'Nursery',
@@ -19,10 +19,8 @@ const getClassDisplayName = (classNum: number) => classDisplayMap[classNum] || `
 
 
 const StudentList: React.FC = () => {
-    const [students, setStudents] = useState<Student[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { students, isLoading, addStudent, updateStudent, deleteStudent, seedAllData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isSeedButtonDisabled, setIsSeedButtonDisabled] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: keyof Student; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
     const [selectedClass, setSelectedClass] = useState<number | 'all'>('all');
@@ -40,33 +38,14 @@ const StudentList: React.FC = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-
-    const fetchStudents = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const studentsFromDb = await getStudents();
-            setStudents(studentsFromDb);
-        } catch (error) {
-            console.error("Error fetching students: ", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchStudents();
-        getStudentsCollectionSize().then(size => {
-            if (size > 0) {
-                setIsSeedButtonDisabled(true);
-            }
-        });
-    }, [fetchStudents]);
     
     const uniqueClasses = useMemo(() => {
-        const classNumbers = [...new Set(students.map(s => s.class))].sort((a, b) => a - b);
+        // Fix: Explicitly type sort parameters to ensure correct type inference.
+        const classNumbers = [...new Set(students.map(s => s.class))].sort((a: number, b: number) => a - b);
         const classOptions = [
-            ...classNumbers.filter(c => c < 1), // Pre-primary
-            ...classNumbers.filter(c => c >= 1) // Primary and above
+            // Fix: Explicitly type the parameter 'c' to resolve comparison errors with 'unknown' type.
+            ...classNumbers.filter((c: number) => c < 1), // Pre-primary
+            ...classNumbers.filter((c: number) => c >= 1) // Primary and above
         ];
         return classOptions;
     }, [students]);
@@ -93,11 +72,14 @@ const StudentList: React.FC = () => {
                 if (typeof valA === 'string' && typeof valB === 'string') {
                     return sortConfig.direction === 'ascending' ? valA.localeCompare(valB) : valB.localeCompare(valA);
                 }
-                if (valA < valB) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (valA > valB) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                // Fix: Handle number types explicitly to resolve comparison errors.
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    if (valA < valB) {
+                        return sortConfig.direction === 'ascending' ? -1 : 1;
+                    }
+                    if (valA > valB) {
+                        return sortConfig.direction === 'ascending' ? 1 : -1;
+                    }
                 }
                 return 0;
             });
@@ -143,7 +125,6 @@ const StudentList: React.FC = () => {
     const confirmDelete = async () => {
         if (studentToDelete !== null) {
             await deleteStudent(studentToDelete);
-            fetchStudents(); // Re-fetch
         }
         setIsConfirmModalOpen(false);
         setStudentToDelete(null);
@@ -157,12 +138,10 @@ const StudentList: React.FC = () => {
         } else {
             await addStudent(data);
         }
-        fetchStudents();
         setIsStudentModalOpen(false);
     };
 
     const handleSaveImportedStudents = async (newStudents: Partial<Student>[]) => {
-        setIsLoading(true);
         const addPromises = newStudents.map(student => {
             const studentData: Omit<Student, 'id'> = {
                 avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
@@ -184,17 +163,13 @@ const StudentList: React.FC = () => {
             return addStudent(studentData);
         });
         await Promise.all(addPromises);
-        fetchStudents();
         setIsImportModalOpen(false);
-        setIsLoading(false);
     };
 
     const handleSeedDatabase = async () => {
         setIsSeeding(true);
         try {
-            await seedStudentsDatabase();
-            await fetchStudents();
-            setIsSeedButtonDisabled(true);
+            await seedAllData();
         } catch(e) {
             console.error("Failed to seed database: ", e);
             alert("Failed to seed database. Check console for errors.");
@@ -220,8 +195,11 @@ const StudentList: React.FC = () => {
             if (typeof valA === 'string' && typeof valB === 'string') {
                 return exportSortConfig.direction === 'ascending' ? valA.localeCompare(valB) : valB.localeCompare(valA);
             }
-            if (valA < valB) return exportSortConfig.direction === 'ascending' ? -1 : 1;
-            if (valA > valB) return exportSortConfig.direction === 'ascending' ? 1 : -1;
+            // Fix: Handle number types explicitly to resolve comparison errors.
+            if (typeof valA === 'number' && typeof valB === 'number') {
+                if (valA < valB) return exportSortConfig.direction === 'ascending' ? -1 : 1;
+                if (valA > valB) return exportSortConfig.direction === 'ascending' ? 1 : -1;
+            }
             return 0;
         });
 
@@ -310,15 +288,15 @@ const StudentList: React.FC = () => {
                 </div>
             </div>
             
-            {!isSeedButtonDisabled && (
+            {!isLoading && students.length === 0 && (
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
                     <div className="flex">
                         <div className="py-1">
                             <p className="font-bold">Database is Empty</p>
-                            <p className="text-sm">Click the seed button to populate your Firestore database with initial mock data.</p>
+                            <p className="text-sm">Click the seed button to populate your database with initial mock data.</p>
                         </div>
                         <div className="ml-auto pl-3">
-                             <button onClick={handleSeedDatabase} disabled={isSeeding || isSeedButtonDisabled} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
+                             <button onClick={handleSeedDatabase} disabled={isSeeding} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
                                 {isSeeding ? 'Seeding...' : 'Seed Database'}
                             </button>
                         </div>

@@ -1,45 +1,30 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Student, AttendanceStatus, AttendanceData } from '../types';
+import { AttendanceStatus } from '../types';
 import { CheckCircleIcon, XCircleIcon, MinusCircleIcon } from './icons';
-import { getStudents, getAttendance, upsertAttendance, seedAttendanceDatabase } from '../services/firestoreService';
+import { useAppContext } from '../state/AppContext';
 
 const Attendance: React.FC = () => {
-    const [students, setStudents] = useState<Student[]>([]);
-    const [attendance, setAttendance] = useState<AttendanceData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { students, attendance, isLoading, loadAttendanceForMonth, upsertAttendance, seedAttendanceData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedClass, setSelectedClass] = useState<number | 'all'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const { year, month, dateArray } = useMemo(() => {
+    const { year, month, dateArray, monthKey } = useMemo(() => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const dateArray = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1));
-        return { year, month, dateArray };
+        const monthKey = `${year}-${month}`;
+        return { year, month, dateArray, monthKey };
     }, [currentDate]);
 
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const [studentsData, attendanceData] = await Promise.all([
-                getStudents(),
-                getAttendance(year, month)
-            ]);
-            setStudents(studentsData);
-            setAttendance(attendanceData);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [year, month]);
-
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        loadAttendanceForMonth(year, month);
+    }, [year, month, loadAttendanceForMonth]);
+    
+    const monthAttendance = useMemo(() => attendance[monthKey] || [], [attendance, monthKey]);
 
     const filteredStudents = useMemo(() => {
         return students.filter(student => selectedClass === 'all' || student.class === selectedClass);
@@ -62,7 +47,7 @@ const Attendance: React.FC = () => {
         today.setHours(0, 0, 0, 0);
         if (new Date(date) > today) return;
 
-        const record = attendance.find(a => a.studentId === studentId && a.date === date);
+        const record = monthAttendance.find(a => a.studentId === studentId && a.date === date);
         const currentStatus = record?.status;
         if (currentStatus === 'Holiday' || currentStatus === 'Future') return;
 
@@ -70,19 +55,7 @@ const Attendance: React.FC = () => {
         const currentIndex = statusCycle.indexOf(currentStatus || 'Present');
         const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
 
-        try {
-            setAttendance(prev => {
-                const existingRecord = prev.find(a => a.studentId === studentId && a.date === date);
-                if (existingRecord) {
-                    return prev.map(a => a.studentId === studentId && a.date === date ? { ...a, status: nextStatus } : a);
-                }
-                return [...prev, { studentId, date, status: nextStatus }];
-            });
-            await upsertAttendance(studentId, date, nextStatus);
-        } catch (error) {
-            console.error("Failed to update attendance:", error);
-            fetchData();
-        }
+        await upsertAttendance(studentId, date, nextStatus);
     };
 
     const getStatusIcon = (status: AttendanceStatus) => {
@@ -97,7 +70,7 @@ const Attendance: React.FC = () => {
     };
     
     const getStudentSummary = (studentId: string) => {
-        const studentAttendance = attendance.filter(a => a.studentId === studentId && new Date(a.date).getMonth() === month);
+        const studentAttendance = monthAttendance.filter(a => a.studentId === studentId);
         const present = studentAttendance.filter(a => a.status === 'Present').length;
         const absent = studentAttendance.filter(a => a.status === 'Absent').length;
         const leave = studentAttendance.filter(a => a.status === 'Leave').length;
@@ -107,8 +80,7 @@ const Attendance: React.FC = () => {
     const handleSeed = async () => {
         setIsSeeding(true);
         try {
-            await seedAttendanceDatabase(year, month);
-            await fetchData();
+            await seedAttendanceData(year, month);
         } catch(e) {
             console.error("Failed to seed attendance:", e);
         } finally {
@@ -116,8 +88,9 @@ const Attendance: React.FC = () => {
         }
     };
 
-    const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a,b) => a-b);
-    const needsSeeding = students.length > 0 && attendance.length === 0 && !isLoading;
+    // Fix: Explicitly type sort parameters to ensure correct type inference.
+    const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a: number, b: number) => a - b);
+    const needsSeeding = students.length > 0 && monthAttendance.length === 0 && !isLoading;
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
@@ -173,7 +146,7 @@ const Attendance: React.FC = () => {
                                         <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white hover:bg-slate-50 z-10 w-48 min-w-[12rem]">{student.name}</td>
                                         {dateArray.map(date => {
                                             const dateString = date.toISOString().split('T')[0];
-                                            const record = attendance.find(a => a.studentId === student.id && a.date === dateString);
+                                            const record = monthAttendance.find(a => a.studentId === student.id && a.date === dateString);
                                             const isClickable = record && record.status !== 'Holiday' && record.status !== 'Future';
                                             return (
                                                 <td key={date.getDate()} className="px-4 py-3 text-center w-12">

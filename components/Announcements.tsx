@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Announcement } from '../types';
 import { PlusIcon, DeleteIcon } from './icons';
-import { getAnnouncements, addAnnouncement, deleteAnnouncement, seedAnnouncementsDatabase, getAnnouncementsCollectionSize } from '../services/firestoreService';
 import ConfirmationModal from './ConfirmationModal';
+import { useAppContext } from '../state/AppContext';
 
 const AnnouncementModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (data: Omit<Announcement, 'id'>) => void; }> = ({ isOpen, onClose, onSave }) => {
     const [title, setTitle] = useState('');
@@ -58,36 +58,14 @@ const AnnouncementCard: React.FC<{ announcement: Announcement; onDelete: (id: st
 );
 
 const Announcements: React.FC = () => {
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { announcements, isLoading, addAnnouncement, deleteAnnouncement, seedAllData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isSeedButtonDisabled, setIsSeedButtonDisabled] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null);
 
-    const fetchAnnouncements = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getAnnouncements();
-            setAnnouncements(data);
-        } catch (error) {
-            console.error("Error fetching announcements:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchAnnouncements();
-        getAnnouncementsCollectionSize().then(size => {
-            if (size > 0) setIsSeedButtonDisabled(true);
-        });
-    }, [fetchAnnouncements]);
-
     const handleSave = async (data: Omit<Announcement, 'id'>) => {
         await addAnnouncement(data);
-        fetchAnnouncements();
     };
     
     const handleDelete = (id: string) => {
@@ -98,7 +76,6 @@ const Announcements: React.FC = () => {
     const confirmDelete = async () => {
         if(announcementToDelete) {
             await deleteAnnouncement(announcementToDelete);
-            fetchAnnouncements();
         }
         setIsConfirmModalOpen(false);
         setAnnouncementToDelete(null);
@@ -107,9 +84,7 @@ const Announcements: React.FC = () => {
     const handleSeedDatabase = async () => {
         setIsSeeding(true);
         try {
-            await seedAnnouncementsDatabase();
-            await fetchAnnouncements();
-            setIsSeedButtonDisabled(true);
+            await seedAllData();
         } catch (e) {
             console.error("Failed to seed database:", e);
         } finally {
@@ -127,15 +102,15 @@ const Announcements: React.FC = () => {
                     New Announcement
                 </button>
             </div>
-             {!isSeedButtonDisabled && (
+             {!isLoading && announcements.length === 0 && (
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
                     <div className="flex">
                         <div className="py-1">
                             <p className="font-bold">Database is Empty</p>
-                            <p className="text-sm">Click the seed button to populate your Firestore database with initial announcements.</p>
+                            <p className="text-sm">Click the seed button to populate your database with initial announcements.</p>
                         </div>
                         <div className="ml-auto pl-3">
-                             <button onClick={handleSeedDatabase} disabled={isSeeding || isSeedButtonDisabled} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
+                             <button onClick={handleSeedDatabase} disabled={isSeeding} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
                                 {isSeeding ? 'Seeding...' : 'Seed Data'}
                             </button>
                         </div>
@@ -144,7 +119,7 @@ const Announcements: React.FC = () => {
             )}
             {isLoading ? (
                 <div className="text-center p-8">Loading announcements...</div>
-            ) : announcements.length === 0 ? (
+            ) : announcements.length === 0 && !isLoading ? (
                 <div className="text-center p-8 bg-white rounded-lg">
                     <p className="text-neutral-500">No announcements posted yet.</p>
                 </div>

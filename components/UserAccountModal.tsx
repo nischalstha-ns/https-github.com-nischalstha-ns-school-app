@@ -16,13 +16,14 @@ const UserAccountModal: React.FC<UserAccountModalProps> = ({ user, onSave, onClo
         password: '',
         role: UserRole.Student,
         status: 'Active',
+        context: '',
     });
 
     const [formData, setFormData] = useState(getInitialFormData());
 
     useEffect(() => {
         if (user) {
-            setFormData({ ...user, password: '' }); // Don't pre-fill password
+            setFormData({ ...user, password: '', context: user.context || '' }); // Don't pre-fill password
         } else {
             setFormData(getInitialFormData());
         }
@@ -81,6 +82,10 @@ const UserAccountModal: React.FC<UserAccountModalProps> = ({ user, onSave, onClo
                                 <option value="Inactive">Inactive</option>
                             </select>
                         </div>
+                    </div>
+                     <div>
+                        <label htmlFor="context" className={labelStyles}>Class / Department</label>
+                        <input type="text" name="context" id="context" value={formData.context || ''} onChange={handleChange} placeholder="e.g., Class 10 A or Mathematics" className={inputStyles} />
                     </div>
                 </form>
                 <div className="p-6 border-t bg-neutral-50 flex justify-end space-x-3">

@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Book } from '../types';
 import { SearchIcon, PlusIcon, EditIcon, DeleteIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
-import { getBooks, addBook, updateBook, deleteBook, seedBooksDatabase, getBooksCollectionSize } from '../services/firestoreService';
+import { useAppContext } from '../state/AppContext';
 
 const LibraryModal: React.FC<{ isOpen: boolean, onClose: () => void, onSave: (book: Omit<Book, 'id'> & { id?: string }) => void, book: Book | null }> = ({ isOpen, onClose, onSave, book }) => {
     // Fix: Widened the type of 'status' to align with the Book type, resolving the type conflict when setting form data for an existing book.
@@ -63,35 +63,14 @@ const LibraryModal: React.FC<{ isOpen: boolean, onClose: () => void, onSave: (bo
 
 
 const Library: React.FC = () => {
-    const [books, setBooks] = useState<Book[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { books, isLoading, addBook, updateBook, deleteBook, seedAllData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isSeedButtonDisabled, setIsSeedButtonDisabled] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'Available' | 'Issued'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [bookToDelete, setBookToDelete] = useState<string | null>(null);
-
-    const fetchBooks = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getBooks();
-            setBooks(data);
-        } catch (error) {
-            console.error("Error fetching books:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchBooks();
-        getBooksCollectionSize().then(size => {
-            if (size > 0) setIsSeedButtonDisabled(true);
-        });
-    }, [fetchBooks]);
 
     const filteredBooks = useMemo(() => {
         return books.filter(book => {
@@ -108,7 +87,6 @@ const Library: React.FC = () => {
         } else {
             await addBook(data);
         }
-        fetchBooks();
         setIsModalOpen(false);
     };
 
@@ -125,7 +103,6 @@ const Library: React.FC = () => {
             updatedData.dueDate = '';
         }
         await updateBook(book.id, updatedData);
-        fetchBooks();
     };
 
     const handleAddBook = () => { setSelectedBook(null); setIsModalOpen(true); };
@@ -135,7 +112,6 @@ const Library: React.FC = () => {
     const confirmDelete = async () => {
         if (bookToDelete) {
             await deleteBook(bookToDelete);
-            fetchBooks();
         }
         setIsConfirmModalOpen(false);
         setBookToDelete(null);
@@ -144,9 +120,7 @@ const Library: React.FC = () => {
      const handleSeedDatabase = async () => {
         setIsSeeding(true);
         try {
-            await seedBooksDatabase();
-            await fetchBooks();
-            setIsSeedButtonDisabled(true);
+            await seedAllData();
         } catch (e) { console.error("Failed to seed database:", e); } 
         finally { setIsSeeding(false); }
     };
@@ -161,9 +135,9 @@ const Library: React.FC = () => {
                     <button onClick={handleAddBook} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark"><PlusIcon className="w-5 h-5" /> Add Book</button>
                 </div>
             </div>
-             {!isSeedButtonDisabled && (
+             {!isLoading && books.length === 0 && (
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                    <div className="flex"><div className="py-1"><p className="font-bold">Database is Empty</p><p className="text-sm">Click the seed button to populate your Firestore database with initial library books.</p></div><div className="ml-auto pl-3"><button onClick={handleSeedDatabase} disabled={isSeeding || isSeedButtonDisabled} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400"> {isSeeding ? 'Seeding...' : 'Seed Data'}</button></div></div>
+                    <div className="flex"><div className="py-1"><p className="font-bold">Database is Empty</p><p className="text-sm">Click the seed button to populate your database with initial library books.</p></div><div className="ml-auto pl-3"><button onClick={handleSeedDatabase} disabled={isSeeding} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400"> {isSeeding ? 'Seeding...' : 'Seed Data'}</button></div></div>
                 </div>
             )}
             <div className="bg-white rounded-xl shadow-sm overflow-x-auto">

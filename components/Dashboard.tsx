@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { AGENDA, MESSAGES, EARNINGS_DATA, STUDENT_ACTIVITIES, NOTICE_BOARD_ITEMS, RECENT_ACTIVITIES } from '../constants';
+import { AGENDA, MESSAGES, EARNINGS_DATA, STUDENT_ACTIVITIES, RECENT_ACTIVITIES } from '../constants';
 import { AwardIcon, BriefcaseIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CompetitionIcon, MoreHorizontalIcon, OlympicIcon, ScienceIcon, TeachersIcon, TrophyIcon, UsersIcon, DebateIcon } from './icons';
-import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem } from '../types';
+import { AgendaItem, Message, EarningsDataPoint, StudentActivityItem, NoticeBoardItem, RecentActivityItem, UserRole } from '../types';
+import { useAppContext } from '../state/AppContext';
 
 const StatCard: React.FC<{ title: string; value: string; percentage: number; icon: React.ReactNode; color: string; }> = ({ title, value, percentage, icon, color }) => {
     const isPositive = percentage >= 0;
@@ -46,39 +47,47 @@ const DonutChart: React.FC<{ percentage: number; color: string; bgColor: string 
     );
 };
 
-const StudentsDistribution = () => (
-    <div className="bg-white p-6 rounded-lg h-full">
-        <div className="flex justify-between items-center">
-            <h2 className="font-bold text-lg">Students</h2>
-            <button className="text-gray-400">
-                <MoreHorizontalIcon className="w-5 h-5" />
-            </button>
-        </div>
-        <div className="flex justify-center items-center my-4 relative">
-            <DonutChart percentage={47} color="stroke-brand-blue" bgColor="stroke-brand-yellow" />
-            <div className="absolute flex items-center justify-center bg-white rounded-full w-16 h-16">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fec240" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4a9cff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="absolute left-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+const StudentsDistribution = () => {
+    const { students } = useAppContext();
+    const boys = students.filter(s => s.gender === 'Male').length;
+    const girls = students.filter(s => s.gender === 'Female').length;
+    const totalStudents = students.length;
+    const boyPercentage = totalStudents > 0 ? Math.round((boys / totalStudents) * 100) : 0;
+    
+    return (
+        <div className="bg-white p-6 rounded-lg h-full">
+            <div className="flex justify-between items-center">
+                <h2 className="font-bold text-lg">Students</h2>
+                <button className="text-gray-400">
+                    <MoreHorizontalIcon className="w-5 h-5" />
+                </button>
+            </div>
+            <div className="flex justify-center items-center my-4 relative">
+                <DonutChart percentage={boyPercentage} color="stroke-primary" bgColor="stroke-yellow-300" />
+                <div className="absolute flex items-center justify-center bg-white rounded-full w-16 h-16">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fec240" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4a9cff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="absolute left-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+            </div>
+            <div className="flex justify-around text-center">
+                <div>
+                    <p className="font-bold text-lg">{boys.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-500 flex items-center">
+                        <span className="w-2 h-2 rounded-full bg-primary mr-2"></span>
+                        Boys ({boyPercentage}%)
+                    </p>
+                </div>
+                <div>
+                    <p className="font-bold text-lg">{girls.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-500 flex items-center">
+                        <span className="w-2 h-2 rounded-full bg-yellow-300 mr-2"></span>
+                        Girls ({100 - boyPercentage}%)
+                    </p>
+                </div>
             </div>
         </div>
-        <div className="flex justify-around text-center">
-            <div>
-                <p className="font-bold text-lg">45,414</p>
-                <p className="text-sm text-brand-text-light flex items-center">
-                    <span className="w-2 h-2 rounded-full bg-brand-blue mr-2"></span>
-                    Boys (47%)
-                </p>
-            </div>
-            <div>
-                <p className="font-bold text-lg">40,270</p>
-                <p className="text-sm text-brand-text-light flex items-center">
-                     <span className="w-2 h-2 rounded-full bg-brand-yellow mr-2"></span>
-                    Girls (53%)
-                </p>
-            </div>
-        </div>
-    </div>
-);
+    );
+};
 
 const AttendanceChart = () => {
     const data = [{ p: 70, a: 60 }, { p: 80, a: 70 }, { p: 95, a: 75 }, { p: 75, a: 65 }, { p: 78, a: 70 }];
@@ -89,16 +98,16 @@ const AttendanceChart = () => {
             <div className="flex flex-wrap justify-between items-center gap-4">
                 <h2 className="font-bold text-lg">Attendance</h2>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                     <div className="text-sm text-brand-text-light flex items-center">
-                        <span className="w-2 h-2 rounded-full bg-brand-yellow mr-2"></span>Total Present
+                     <div className="text-sm text-neutral-500 flex items-center">
+                        <span className="w-2 h-2 rounded-full bg-yellow-300 mr-2"></span>Total Present
                     </div>
-                     <div className="text-sm text-brand-text-light flex items-center">
-                        <span className="w-2 h-2 rounded-full bg-brand-blue mr-2"></span>Total Absent
+                     <div className="text-sm text-neutral-500 flex items-center">
+                        <span className="w-2 h-2 rounded-full bg-blue-300 mr-2"></span>Total Absent
                     </div>
-                    <button className="text-sm text-brand-text-light bg-gray-100 px-3 py-1 rounded-md flex items-center">
+                    <button className="text-sm text-neutral-500 bg-gray-100 px-3 py-1 rounded-md flex items-center">
                         Weekly <ChevronDownIcon className="w-4 h-4 ml-1" />
                     </button>
-                    <button className="text-sm text-brand-text-light bg-gray-100 px-3 py-1 rounded-md flex items-center">
+                    <button className="text-sm text-neutral-500 bg-gray-100 px-3 py-1 rounded-md flex items-center">
                         Grade 3 <ChevronDownIcon className="w-4 h-4 ml-1" />
                     </button>
                 </div>
@@ -112,10 +121,10 @@ const AttendanceChart = () => {
                             </div>
                         )}
                         <div className="flex items-end space-x-1 h-full">
-                           <div className="w-3 sm:w-4 bg-brand-yellow rounded-t-md" style={{ height: `${day.p}%` }}></div>
-                           <div className="w-3 sm:w-4 bg-brand-blue-light rounded-t-md" style={{ height: `${day.a}%` }}></div>
+                           <div className="w-3 sm:w-4 bg-yellow-300 rounded-t-md" style={{ height: `${day.p}%` }}></div>
+                           <div className="w-3 sm:w-4 bg-blue-300 rounded-t-md" style={{ height: `${day.a}%` }}></div>
                         </div>
-                        <p className="text-xs text-brand-text-light mt-2">{days[index]}</p>
+                        <p className="text-xs text-neutral-500 mt-2">{days[index]}</p>
                     </div>
                 ))}
             </div>
@@ -165,8 +174,8 @@ const EarningsChart = () => {
             <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                 <h2 className="font-bold text-lg">Earnings</h2>
                 <div className="flex items-center space-x-4">
-                    <div className="text-sm text-brand-text-light flex items-center"><span className="w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>Income</div>
-                    <div className="text-sm text-brand-text-light flex items-center"><span className="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>Expense</div>
+                    <div className="text-sm text-neutral-500 flex items-center"><span className="w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>Income</div>
+                    <div className="text-sm text-neutral-500 flex items-center"><span className="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>Expense</div>
                     <button className="text-gray-400"><MoreHorizontalIcon className="w-5 h-5" /></button>
                 </div>
             </div>
@@ -216,7 +225,7 @@ const StudentActivityWidget = () => {
         <div className="bg-white p-6 rounded-lg">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="font-bold text-lg">Student Activity</h2>
-                <button className="text-sm text-brand-blue font-semibold">View All</button>
+                <button className="text-sm text-primary font-semibold">View All</button>
             </div>
             <div className="space-y-4">
                 {STUDENT_ACTIVITIES.map((item: StudentActivityItem) => (
@@ -224,8 +233,8 @@ const StudentActivityWidget = () => {
                         <div className="bg-gray-100 p-3 rounded-lg">{icons[item.icon]}</div>
                         <div>
                             <p className="font-semibold">{item.title}</p>
-                            <p className="text-sm text-brand-text-light">{item.description}</p>
-                            <p className="text-xs text-brand-text-light mt-1">{item.time}</p>
+                            <p className="text-sm text-neutral-500">{item.description}</p>
+                            <p className="text-xs text-neutral-500 mt-1">{item.time}</p>
                         </div>
                     </div>
                 ))}
@@ -234,27 +243,39 @@ const StudentActivityWidget = () => {
     );
 };
 
-const NoticeBoardWidget = () => (
+const NoticeBoardWidget = () => {
+    const { announcements } = useAppContext();
+    const noticeBoardItems = announcements.slice(0, 3).map(ann => ({
+        id: ann.id,
+        image: `https://picsum.photos/seed/${ann.id}/200`,
+        title: ann.title,
+        author: 'Admin',
+        date: new Date(ann.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        views: `${(Math.random() * 2 + 0.5).toFixed(1)}k`
+    }));
+
+    return (
     <div className="bg-white p-6 rounded-lg">
         <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-lg">Notice Board</h2>
             <button className="text-gray-400"><MoreHorizontalIcon className="w-5 h-5" /></button>
         </div>
         <div className="space-y-3">
-            {NOTICE_BOARD_ITEMS.map((item: NoticeBoardItem) => (
+            {noticeBoardItems.map((item: NoticeBoardItem) => (
                 <div key={item.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
                     <img src={item.image} alt={item.title} className="w-12 h-12 rounded-lg object-cover" />
                     <div className="flex-1">
                         <p className="font-semibold text-sm">{item.title}</p>
-                        <p className="text-xs text-brand-text-light">{item.author}</p>
+                        <p className="text-xs text-neutral-500">{item.author}</p>
                     </div>
-                    <p className="text-xs text-brand-text-light">{item.date}</p>
-                    <p className="text-sm font-semibold text-brand-text-light w-10 text-right">{item.views}</p>
+                    <p className="text-xs text-neutral-500">{item.date}</p>
+                    <p className="text-sm font-semibold text-neutral-500 w-10 text-right">{item.views}</p>
                 </div>
             ))}
         </div>
     </div>
-);
+    );
+};
 
 
 const CalendarWidget = () => (
@@ -264,12 +285,12 @@ const CalendarWidget = () => (
             <h3 className="font-bold">September 2030</h3>
             <button className="p-1 rounded-full hover:bg-gray-100"><ChevronRightIcon className="w-5 h-5" /></button>
         </div>
-        <div className="grid grid-cols-7 text-center text-xs sm:text-sm text-brand-text-light">
+        <div className="grid grid-cols-7 text-center text-xs sm:text-sm text-neutral-500">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="py-2">{day}</div>)}
             {['', '', '', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30].map((day, i) => {
                 const isToday = day === 22;
                 return (
-                    <div key={i} className={`py-2 ${isToday ? 'bg-brand-blue text-white rounded-lg' : 'hover:bg-gray-100 rounded-lg cursor-pointer'}`}>
+                    <div key={i} className={`py-2 ${isToday ? 'bg-primary text-white rounded-lg' : 'hover:bg-gray-100 rounded-lg cursor-pointer'}`}>
                         {day}
                     </div>
                 );
@@ -289,10 +310,10 @@ const AgendaWidget = () => (
         <div className="space-y-3">
             {AGENDA.map((item: AgendaItem) => (
                 <div key={item.id} className={`${item.color} p-3 rounded-lg flex items-center`}>
-                    <p className="text-sm font-semibold text-brand-text-light mr-4">{item.time}</p>
+                    <p className="text-sm font-semibold text-neutral-500 mr-4">{item.time}</p>
                     <div className="border-l-2 border-gray-300 pl-4">
-                        <p className="text-sm text-brand-text-light">{item.title}</p>
-                        <p className="font-semibold text-brand-text-dark">{item.subtitle}</p>
+                        <p className="text-sm text-neutral-500">{item.title}</p>
+                        <p className="font-semibold text-neutral-800">{item.subtitle}</p>
                     </div>
                 </div>
             ))}
@@ -304,7 +325,7 @@ const MessagesWidget = () => (
     <div className="bg-white p-6 rounded-lg">
         <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-lg">Messages</h2>
-            <button className="text-sm text-brand-blue font-semibold">View All</button>
+            <button className="text-sm text-primary font-semibold">View All</button>
         </div>
         <div className="space-y-4">
             {MESSAGES.map((msg: Message) => (
@@ -313,12 +334,12 @@ const MessagesWidget = () => (
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline">
                             <p className="font-semibold text-sm truncate">{msg.sender}</p>
-                            <p className="text-xs text-brand-text-light flex-shrink-0">{msg.time}</p>
+                            <p className="text-xs text-neutral-500 flex-shrink-0">{msg.time}</p>
                         </div>
-                        <p className="text-sm text-brand-text-light truncate">{msg.text}</p>
+                        <p className="text-sm text-neutral-500 truncate">{msg.text}</p>
                     </div>
                     {msg.unread && (
-                        <span className="bg-brand-purple text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">{msg.unread}</span>
+                        <span className="bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">{msg.unread}</span>
                     )}
                 </div>
             ))}
@@ -330,7 +351,7 @@ const RecentActivityWidget = () => (
     <div className="bg-white p-6 rounded-lg">
         <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-lg">Recent Activity</h2>
-            <button className="text-sm text-brand-blue font-semibold">View All</button>
+            <button className="text-sm text-primary font-semibold">View All</button>
         </div>
         <div className="space-y-4">
             {RECENT_ACTIVITIES.map((item: RecentActivityItem) => (
@@ -340,7 +361,7 @@ const RecentActivityWidget = () => (
                         <p className="text-sm">
                             <span className="font-semibold">{item.user}</span> {item.action} <span className="font-semibold">{item.subject}</span>
                         </p>
-                        <p className="text-xs text-brand-text-light">{item.time}</p>
+                        <p className="text-xs text-neutral-500">{item.time}</p>
                     </div>
                 </div>
             ))}
@@ -349,15 +370,23 @@ const RecentActivityWidget = () => (
 );
 
 const Dashboard: React.FC = () => {
+    const { students, teachers, users, isLoading } = useAppContext();
+
+    if (isLoading) {
+        return <div className="text-center p-8">Loading dashboard data...</div>;
+    }
+
+    const staffCount = users.filter(u => u.role === UserRole.Staff || u.role === UserRole.Manager || u.role === UserRole.Finance).length;
+
     return (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Content */}
             <div className="xl:col-span-2 space-y-6 lg:space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="Students" value="124,684" percentage={15} icon={<UsersIcon className="w-6 h-6" />} color="bg-brand-purple-light" />
-                    <StatCard title="Teachers" value="12,379" percentage={-3} icon={<TeachersIcon className="w-6 h-6" />} color="bg-brand-yellow-light" />
-                    <StatCard title="Staffs" value="29,300" percentage={-3} icon={<BriefcaseIcon className="w-6 h-6" />} color="bg-brand-purple-light" />
-                    <StatCard title="Awards" value="95,800" percentage={5} icon={<AwardIcon className="w-6 h-6" />} color="bg-brand-yellow-light" />
+                    <StatCard title="Students" value={students.length.toLocaleString()} percentage={15} icon={<UsersIcon className="w-6 h-6" />} color="bg-blue-100" />
+                    <StatCard title="Teachers" value={teachers.length.toLocaleString()} percentage={-3} icon={<TeachersIcon className="w-6 h-6" />} color="bg-yellow-100" />
+                    <StatCard title="Staffs" value={staffCount.toLocaleString()} percentage={-3} icon={<BriefcaseIcon className="w-6 h-6" />} color="bg-purple-100" />
+                    <StatCard title="Awards" value="95,800" percentage={5} icon={<AwardIcon className="w-6 h-6" />} color="bg-green-100" />
                 </div>
                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
                     <div className="lg:col-span-2">
@@ -374,18 +403,18 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="space-y-6">
                         <div className="bg-white p-4 rounded-lg flex items-center space-x-4">
-                            <div className="bg-blue-100 p-3 rounded-lg"><OlympicIcon className="w-6 h-6 text-brand-blue" /></div>
+                            <div className="bg-blue-100 p-3 rounded-lg"><OlympicIcon className="w-6 h-6 text-primary" /></div>
                             <div>
                                 <p className="font-bold text-xl">24,680</p>
-                                <p className="text-sm text-brand-text-light">Olympic Students</p>
+                                <p className="text-sm text-neutral-500">Olympic Students</p>
                                 <p className="text-xs text-green-600 font-semibold mt-1">▲ 15%</p>
                             </div>
                         </div>
                          <div className="bg-white p-4 rounded-lg flex items-center space-x-4">
-                            <div className="bg-yellow-100 p-3 rounded-lg"><CompetitionIcon className="w-6 h-6 text-brand-yellow" /></div>
+                            <div className="bg-yellow-100 p-3 rounded-lg"><CompetitionIcon className="w-6 h-6 text-yellow-500" /></div>
                             <div>
                                 <p className="font-bold text-xl">3,000</p>
-                                <p className="text-sm text-brand-text-light">Competition</p>
+                                <p className="text-sm text-neutral-500">Competition</p>
                                 <p className="text-xs text-red-600 font-semibold mt-1">▼ 6%</p>
                             </div>
                         </div>

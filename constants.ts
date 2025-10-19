@@ -109,13 +109,13 @@ export const FEE_COLLECTION_DATA: Omit<FeeCollection, 'id'>[] = [
     { studentName: 'Mia Wilson', studentId: '2019-05-021', avatar: `${PLACEHOLDER_AVATAR}/42`, class: '9C', tuitionFee: 4400, activitiesFee: 220, miscellaneousFee: 120, totalAmount: 4740, status: 'Pending' },
 ];
 
-export const USERS: Omit<UserAccount, 'id' | 'password'>[] = [
-    { fullName: 'Linda Adora', email: 'linda.adora@school.edu', role: UserRole.Manager, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/5` },
-    { fullName: 'John Johnson', email: 'john.johnson@school.edu', role: UserRole.Parent, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/1` },
-    { fullName: 'Elizabeth Johnson', email: 'e.johnson@school.edu', role: UserRole.Teacher, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/21` },
-    { fullName: 'Alice Johnson', email: 'alice.j@school.com', role: UserRole.Student, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/11` },
-    { fullName: 'Finance Team', email: 'finance@school.edu', role: UserRole.Finance, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/50` },
-    { fullName: 'Inactive User', email: 'inactive.user@school.edu', role: UserRole.Staff, status: 'Inactive', avatar: `${PLACEHOLDER_AVATAR}/51` },
+export const USERS: Omit<UserAccount, 'id'>[] = [
+    { fullName: 'Nischal Admin', email: 'nischalfancystore@gmail.com', password: '112233445566', role: UserRole.Manager, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/5` },
+    { fullName: 'John Johnson', email: 'john.johnson@school.edu', password: 'password123', role: UserRole.Parent, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/1` },
+    { fullName: 'Elizabeth Johnson', email: 'e.johnson@school.edu', password: 'password123', role: UserRole.Teacher, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/21` },
+    { fullName: 'Alice Johnson', email: 'alice.j@school.com', password: 'password123', role: UserRole.Student, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/11` },
+    { fullName: 'Finance Team', email: 'finance@school.edu', password: 'password123', role: UserRole.Finance, status: 'Active', avatar: `${PLACEHOLDER_AVATAR}/50` },
+    { fullName: 'Inactive User', email: 'inactive.user@school.edu', password: 'password123', role: UserRole.Staff, status: 'Inactive', avatar: `${PLACEHOLDER_AVATAR}/51` },
 ];
 
 export const CALENDAR_EVENTS: Omit<CalendarEvent, 'id'>[] = [

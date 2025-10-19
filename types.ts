@@ -149,6 +149,7 @@ export interface UserAccount {
     status: 'Active' | 'Inactive';
     avatar?: string;
     password?: string; // Only for creation/update, not stored long-term
+    context?: string; // e.g., "Class 10 A" for students, "Mathematics" for teachers
 }
 
 export interface CalendarEvent {
@@ -185,4 +186,11 @@ export interface Conversation {
         sender: 'me' | 'other';
         timestamp: string;
     }[];
+}
+
+export interface BulkGenerateAccountsResult {
+    studentsCreated: number;
+    teachersCreated: number;
+    staffCreated: number;
+    totalCreated: number;
 }

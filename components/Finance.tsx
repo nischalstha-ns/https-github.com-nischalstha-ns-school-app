@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FEES_CHART_DATA } from '../constants';
 import { FeeCollection } from '../types';
 import { SearchIcon, EditIcon, PlusIcon, DeleteIcon, TrendingUpIcon, FileTextIcon } from './icons';
-import { getFinanceData, addFinanceRecord, updateFinanceRecord, deleteFinanceRecord, seedFinanceDatabase, getFinanceCollectionSize } from '../services/firestoreService';
 import ConfirmationModal from './ConfirmationModal';
 import FinanceModal from './FinanceModal';
+import { useAppContext } from '../state/AppContext';
 
 
 const FinanceStatCard: React.FC<{ title: string; value: string; percentage: number; }> = ({ title, value, percentage }) => {
@@ -79,11 +79,8 @@ const FeesLineChart: React.FC = () => {
 };
 
 const Finance: React.FC = () => {
-    const [fees, setFees] = useState<FeeCollection[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { financeData: fees, isLoading, addFinanceRecord, updateFinanceRecord, deleteFinanceRecord, seedAllData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isSeedButtonDisabled, setIsSeedButtonDisabled] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     
@@ -92,25 +89,6 @@ const Finance: React.FC = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
-    
-    const fetchFinanceData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getFinanceData();
-            setFees(data);
-        } catch (error) {
-            console.error("Error fetching finance data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchFinanceData();
-        getFinanceCollectionSize().then(size => {
-            if (size > 0) setIsSeedButtonDisabled(true);
-        });
-    }, [fetchFinanceData]);
 
     const paginatedFees = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -141,7 +119,6 @@ const Finance: React.FC = () => {
     const confirmDelete = async () => {
         if (recordToDelete) {
             await deleteFinanceRecord(recordToDelete);
-            fetchFinanceData();
         }
         setIsConfirmModalOpen(false);
         setRecordToDelete(null);
@@ -154,16 +131,13 @@ const Finance: React.FC = () => {
         } else {
             await addFinanceRecord(data);
         }
-        fetchFinanceData();
         setIsModalOpen(false);
     };
 
     const handleSeedDatabase = async () => {
         setIsSeeding(true);
         try {
-            await seedFinanceDatabase();
-            await fetchFinanceData();
-            setIsSeedButtonDisabled(true);
+            await seedAllData();
         } catch (e) {
             console.error("Failed to seed database:", e);
         } finally {
@@ -194,15 +168,15 @@ const Finance: React.FC = () => {
                 </div>
             </div>
 
-            {!isSeedButtonDisabled && (
+            {!isLoading && fees.length === 0 && (
                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
                     <div className="flex">
                         <div className="py-1">
                             <p className="font-bold">Database is Empty</p>
-                            <p className="text-sm">Click the seed button to populate your Firestore database with initial finance data.</p>
+                            <p className="text-sm">Click the seed button to populate your database with initial finance data.</p>
                         </div>
                         <div className="ml-auto pl-3">
-                             <button onClick={handleSeedDatabase} disabled={isSeeding || isSeedButtonDisabled} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
+                             <button onClick={handleSeedDatabase} disabled={isSeeding} className="px-4 py-2 bg-yellow-400 text-yellow-900 font-semibold rounded-lg hover:bg-yellow-500 disabled:bg-neutral-400 disabled:cursor-not-allowed">
                                 {isSeeding ? 'Seeding...' : 'Seed Database'}
                             </button>
                         </div>

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons';
-
-interface LoginProps {
-    onLoginSuccess: () => void;
-}
+import { useAuth } from '../state/AuthContext';
+import { seedAllData } from '../services/firestoreService';
 
 const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
     const [email, setEmail] = useState('');
@@ -11,7 +9,6 @@ const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Simulate sending a reset link
         console.log(`Password reset link sent to ${email}`);
         setIsSent(true);
     };
@@ -32,18 +29,18 @@ const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
                     <div className="text-center">
                         <h3 className="text-lg font-bold text-neutral-800">Check your email</h3>
                         <p className="mt-2 text-sm text-neutral-600">We've sent a password reset link to <strong>{email}</strong>.</p>
-                         <button onClick={handleClose} className="mt-4 w-full px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark">Close</button>
+                         <button onClick={handleClose} className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-[#3a6ff7] to-[#5f2eea] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Close</button>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit}>
                         <h3 className="text-lg font-bold text-neutral-800">Forgot Password</h3>
                         <p className="mt-2 text-sm text-neutral-600">Enter your email and we'll send you a link to reset your password.</p>
                         <div className="mt-4">
-                            <label htmlFor="reset-email" className="block text-sm font-medium text-neutral-700">Email Address</label>
-                            <input type="email" id="reset-email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-neutral-300 rounded-md"/>
+                            <label htmlFor="reset-email" className="block text-sm font-medium text-[#333333]">Email Address</label>
+                            <input type="email" id="reset-email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-[#d0d0d0] rounded-md bg-neutral-50 text-neutral-900"/>
                         </div>
                         <div className="mt-6 flex justify-end">
-                            <button type="submit" className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark">Send Reset Link</button>
+                            <button type="submit" className="px-4 py-2 bg-gradient-to-r from-[#3a6ff7] to-[#5f2eea] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Send Reset Link</button>
                         </div>
                     </form>
                 )}
@@ -52,48 +49,92 @@ const ForgotPasswordModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
     );
 };
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-    const [email, setEmail] = useState('linda.adora@school.edu');
-    const [password, setPassword] = useState('password123');
+const Login: React.FC = () => {
+    const { login } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isSeeding, setIsSeeding] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        // Simple hardcoded authentication for demonstration
-        if (email === 'linda.adora@school.edu' && password === 'password123') {
-            onLoginSuccess();
-        } else {
+        setIsLoggingIn(true);
+        const success = await login(email, password);
+        if (!success) {
             setError('Invalid email or password.');
+        }
+        setIsLoggingIn(false);
+    };
+
+    const handleSeed = async () => {
+        setIsSeeding(true);
+        try {
+            await seedAllData();
+            alert("Database has been reset and seeded with demo data. You can now log in with the default admin credentials.");
+        } catch (error) {
+            console.error(error);
+            setError("Failed to seed database. Check console for errors.");
+        } finally {
+            setIsSeeding(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-brand-bg flex flex-col justify-center items-center p-4">
             <div className="w-full max-w-md">
-                 <h1 className="text-4xl font-bold text-neutral-800 text-center">SchoolHub</h1>
+                 <h1 className="text-4xl font-bold text-[#1e2a5e] text-center">SchoolHub</h1>
                 <p className="text-center text-neutral-500 mt-2">Welcome back! Please sign in.</p>
-                 <div className="bg-white mt-8 p-8 rounded-xl shadow-md">
+                 <div className="bg-white mt-8 p-8 rounded-2xl shadow-lg">
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-neutral-700">Email Address</label>
-                            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <label htmlFor="email" className="block text-sm font-medium text-[#333333]">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                required 
+                                className="mt-1 block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500"
+                                placeholder="you@example.com"
+                            />
                         </div>
                         <div>
                             <div className="flex justify-between items-baseline">
-                                <label htmlFor="password" className="block text-sm font-medium text-neutral-700">Password</label>
-                                <button type="button" onClick={() => setIsForgotModalOpen(true)} className="text-sm text-primary hover:underline">Forgot password?</button>
+                                <label htmlFor="password" className="block text-sm font-medium text-[#333333]">Password</label>
+                                <button type="button" onClick={() => setIsForgotModalOpen(true)} className="text-sm text-[#3a6ff7] hover:underline font-medium">Forgot password?</button>
                             </div>
-                            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                required 
+                                className="mt-1 block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500"
+                                placeholder="••••••••"
+                            />
                         </div>
 
                         {error && <p className="text-sm text-red-600 text-center">{error}</p>}
                         
                         <div>
-                            <button type="submit" className="w-full py-3 px-4 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark shadow-sm">Sign In</button>
+                            <button 
+                                type="submit" 
+                                disabled={isLoggingIn}
+                                className="w-full py-3 px-4 bg-gradient-to-r from-[#3a6ff7] to-[#5f2eea] text-white font-bold rounded-lg hover:opacity-90 transition-opacity shadow-md flex justify-center items-center disabled:opacity-50"
+                            >
+                                {isLoggingIn && <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                                {isLoggingIn ? 'Signing In...' : 'Sign In'}
+                            </button>
                         </div>
                     </form>
+                </div>
+                 <div className="mt-4 text-center">
+                    <button onClick={handleSeed} disabled={isSeeding} className="text-sm text-neutral-500 hover:underline disabled:text-neutral-400">
+                        {isSeeding ? 'Resetting Database...' : 'Reset & Seed Demo Data'}
+                    </button>
                 </div>
             </div>
              <ForgotPasswordModal isOpen={isForgotModalOpen} onClose={() => setIsForgotModalOpen(false)} />
