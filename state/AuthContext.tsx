@@ -10,7 +10,7 @@ interface AuthContextType {
     user: UserAccount | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (identifier: string, password?: string) => Promise<boolean>;
+    login: (identifier: string, password?: string) => Promise<true | string>;
     logout: () => void;
 }
 
@@ -48,37 +48,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => unsubscribe();
     }, []);
 
-    const login = async (identifier: string, password?: string): Promise<boolean> => {
+    const login = async (identifier: string, password?: string): Promise<true | string> => {
         if (!password || !identifier) {
-            return false;
+            return "Username and password are required.";
         }
         setIsLoading(true);
 
         try {
             let userEmail = identifier;
 
-            // If the identifier doesn't look like an email, assume it's a full name and find the corresponding email.
+            // If the identifier doesn't look like an email, assume it's a name and find the corresponding email.
             if (!identifier.includes('@')) {
                 const usersRef = collection(db, "users");
                 const querySnapshot = await getDocs(usersRef);
 
                 if (querySnapshot.empty) {
-                    console.error("Login failed: No users found in the database to search by name.");
+                    const message = "Login failed: No users found in the database to search by name.";
+                    console.error(message);
                     setIsLoading(false);
-                    return false;
+                    return message;
                 }
-
+                
+                // Use an exact, case-insensitive match to prevent ambiguity
                 const matchingUsers = querySnapshot.docs.filter(doc => 
-                    doc.data().fullName.toLowerCase().includes(identifier.toLowerCase())
+                    doc.data().fullName.toLowerCase() === identifier.toLowerCase()
                 );
                 
-                if (matchingUsers.length !== 1) {
-                    const errorMessage = matchingUsers.length === 0 
-                        ? `No user found matching the name "${identifier}".`
-                        : `Ambiguous login: ${matchingUsers.length} users found matching "${identifier}". Please use a more specific name or your email address.`;
+                if (matchingUsers.length === 0) {
+                    const errorMessage = `No user found with the name "${identifier}". Please use your exact full name or your email address.`;
                     console.error("Login failed:", errorMessage);
                     setIsLoading(false);
-                    return false;
+                    return errorMessage;
+                }
+
+                if (matchingUsers.length > 1) {
+                    // This is an edge case if names aren't unique, but good to handle.
+                    const errorMessage = `Ambiguous login: Multiple users found with the exact name "${identifier}". Please use your email or contact an administrator.`;
+                    console.error("Login failed:", errorMessage);
+                    setIsLoading(false);
+                    return errorMessage;
                 }
                 
                 userEmail = matchingUsers[0].data().email;
@@ -90,9 +98,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch (error) {
             console.error("Firebase login failed:", error);
             setIsLoading(false);
-            return false;
+            return "Invalid username/email or password.";
         }
     };
+
 
     const logout = async () => {
         try {

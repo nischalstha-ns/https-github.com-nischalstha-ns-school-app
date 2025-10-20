@@ -63,11 +63,12 @@ const Login: React.FC = () => {
         e.preventDefault();
         setError('');
         setIsLoggingIn(true);
-        const success = await login(identifier, password);
-        if (!success) {
-            setError('Invalid username/email or password.');
+        const result = await login(identifier, password);
+        if (result !== true) {
+            setError(result);
             setPassword('');
         }
+        // On success, component will unmount. On error, stop spinner.
         setIsLoggingIn(false);
     };
 
@@ -100,7 +101,7 @@ const Login: React.FC = () => {
                                 onChange={(e) => setIdentifier(e.target.value)} 
                                 required 
                                 className="mt-1 block w-full px-4 py-3 border border-[#d0d0d0] rounded-lg bg-neutral-50 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#3a6ff7] placeholder:text-neutral-500"
-                                placeholder="e.g., nischalfancystore@gmail.com or Nischal Admin"
+                                placeholder=""
                             />
                         </div>
                         <div>

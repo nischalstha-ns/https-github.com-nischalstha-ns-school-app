@@ -116,8 +116,11 @@ export const addUser = async (data: Omit<UserAccount, 'id'>) => {
         await createUserWithEmailAndPassword(auth, data.email, data.password);
         const { password, ...firestoreData } = data;
         return addDoc(collection(db, 'users'), firestoreData);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating user account:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            throw new Error(`An account with the email address ${data.email} already exists.`);
+        }
         throw error;
     }
 };
