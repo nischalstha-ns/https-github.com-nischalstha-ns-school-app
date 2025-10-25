@@ -162,6 +162,7 @@ export interface UserAccount {
     avatar?: string;
     password?: string; // Only for creation/update, not stored long-term
     context?: string; // e.g., "Class 10 A" for students, "Mathematics" for teachers
+    searchableName?: string; // For case-insensitive search
 }
 
 export interface CalendarEvent {
@@ -202,8 +203,10 @@ export interface Conversation {
 
 export interface SubjectResult {
     name: string;
-    marksObtained: number;
-    totalMarks: number;
+    theoryMax: number;
+    practicalMax: number;
+    theoryObtained: number;
+    practicalObtained: number;
 }
 
 export interface Result {
@@ -219,8 +222,10 @@ export interface Result {
     totalPossibleMarks: number;
     percentage: number;
     grade: string;
+    status: 'Passed' | 'Failed';
     remarks?: string;
 }
+
 
 export interface BulkGenerateAccountsResult {
     studentsCreated: number;

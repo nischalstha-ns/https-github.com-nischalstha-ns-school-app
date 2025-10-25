@@ -12,6 +12,65 @@
       body {
         font-family: 'Poppins', sans-serif;
       }
+      @media print {
+        @page {
+          size: A4;
+          margin: 0;
+        }
+
+        body {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: auto;
+          box-shadow: none !important;
+          border: none !important;
+          font-size: 10pt; /* Standard print font size */
+        }
+
+        .no-print, .no-print * {
+          display: none !important;
+        }
+
+        body * {
+          visibility: hidden;
+        }
+
+        .print-area, .print-area * {
+          visibility: visible;
+        }
+
+        /* Ensure table borders are consistent for printing */
+        .print-area table, .print-area th, .print-area td {
+          border-width: 1px !important;
+          border-color: #cbd5e1 !important; /* neutral-300 */
+        }
+
+        .print-area thead {
+            background-color: #f1f5f9 !important; /* neutral-100 */
+        }
+
+        /* Force black text for readability */
+        .print-area h1, .print-area h2, .print-area h3, .print-area p, .print-area div, .print-area span, .print-area strong, .print-area td, .print-area th {
+            color: #000 !important;
+        }
+        
+        /* Ensure background colors on elements print */
+        .print-area .bg-neutral-100 {
+            background-color: #f1f5f9 !important;
+        }
+
+        /* Hide scrollbars in print view */
+        .print-area {
+            overflow: hidden !important;
+        }
+      }
     </style>
     <script>
       tailwind.config = {

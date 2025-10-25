@@ -42,7 +42,7 @@ interface AppContextType extends AppState {
     addResult: (data: Omit<Result, 'id'>) => Promise<void>;
     updateResult: (id: string, data: Partial<Omit<Result, 'id'>>) => Promise<void>;
     deleteResult: (id: string) => Promise<void>;
-    bulkGenerateClassAccounts: (classNumber: number, usernamePattern: string, passwordPattern: string) => Promise<number>;
+    bulkGenerateClassAccounts: (classNumber: number, usernamePattern: string, passwordPattern: string) => Promise<{ success: number; failed: number; errors: string[] }>;
     bulkUpdateUserStatus: (userIds: string[], status: 'Active' | 'Inactive') => Promise<void>;
     seedAllData: () => Promise<void>;
     seedAttendanceData: (year: number, month: number) => Promise<void>;
@@ -128,40 +128,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }, handleError);
     }, []);
 
-    const bulkGenerateClassAccounts = async (classNumber: number, usernamePattern: string, passwordPattern: string): Promise<number> => {
+    const bulkGenerateClassAccounts = async (classNumber: number, usernamePattern: string, passwordPattern: string): Promise<{ success: number; failed: number; errors: string[] }> => {
         const targetStudents = state.students.filter(s => s.class === classNumber);
         const existingUserEmails = new Set(state.users.map(u => u.email));
         
         const usersToCreate: Omit<UserAccount, 'id'>[] = [];
 
         targetStudents.forEach(student => {
-            if (student.email && !existingUserEmails.has(student.email)) {
-                const [firstName, ...lastNameParts] = student.name.split(' ');
-                const lastName = lastNameParts.join(' ');
+            const [firstName, ...lastNameParts] = student.name.split(' ');
+            const lastName = lastNameParts.join(' ');
 
-                const replacePlaceholders = (pattern: string) => pattern
-                    .replace('{firstName}', firstName.toLowerCase())
-                    .replace('{lastName}', lastName.toLowerCase())
-                    .replace('{rollNo}', String(student.rollNo))
-                    .replace('{class}', String(student.class));
+            const replacePlaceholders = (pattern: string) => pattern
+                .replace(/{firstName}/g, firstName.toLowerCase())
+                .replace(/{lastName}/g, lastName.toLowerCase())
+                .replace(/{rollNo}/g, String(student.rollNo))
+                .replace(/{class}/g, String(student.class));
 
+            const generatedEmail = replacePlaceholders(usernamePattern);
+            
+            if (student.email && !existingUserEmails.has(generatedEmail)) {
                 const newUser: Omit<UserAccount, 'id'> = {
                     fullName: student.name,
-                    email: replacePlaceholders(usernamePattern),
+                    email: generatedEmail,
                     password: replacePlaceholders(passwordPattern),
                     role: UserRole.Student,
                     status: 'Active',
                     avatar: student.avatar,
                     context: `Class ${student.class} ${student.section}`,
+                    searchableName: student.name.toLowerCase(),
                 };
                 usersToCreate.push(newUser);
             }
         });
 
         if (usersToCreate.length > 0) {
-            await firestoreService.bulkCreateUsers(usersToCreate);
+            return await firestoreService.bulkCreateUsers(usersToCreate);
         }
-        return usersToCreate.length;
+        return { success: 0, failed: 0, errors: ["No new students found in the selected class to generate accounts for."] };
     };
 
 

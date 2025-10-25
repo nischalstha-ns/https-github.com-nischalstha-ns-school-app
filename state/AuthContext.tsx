@@ -60,36 +60,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // If the identifier doesn't look like an email, assume it's a name and find the corresponding email.
             if (!identifier.includes('@')) {
                 const usersRef = collection(db, "users");
-                const querySnapshot = await getDocs(usersRef);
-
+                // Use an efficient, case-insensitive query against the 'searchableName' field.
+                const q = query(usersRef, where("searchableName", "==", identifier.toLowerCase()));
+                const querySnapshot = await getDocs(q);
+                
                 if (querySnapshot.empty) {
-                    const message = "Login failed: No users found in the database to search by name.";
-                    console.error(message);
-                    setIsLoading(false);
-                    return message;
-                }
-                
-                // Use an exact, case-insensitive match to prevent ambiguity
-                const matchingUsers = querySnapshot.docs.filter(doc => 
-                    doc.data().fullName.toLowerCase() === identifier.toLowerCase()
-                );
-                
-                if (matchingUsers.length === 0) {
                     const errorMessage = `No user found with the name "${identifier}". Please use your exact full name or your email address.`;
                     console.error("Login failed:", errorMessage);
                     setIsLoading(false);
                     return errorMessage;
                 }
 
-                if (matchingUsers.length > 1) {
+                if (querySnapshot.size > 1) {
                     // This is an edge case if names aren't unique, but good to handle.
-                    const errorMessage = `Ambiguous login: Multiple users found with the exact name "${identifier}". Please use your email or contact an administrator.`;
+                    const errorMessage = `Ambiguous login: Multiple users found with the name "${identifier}". Please use your email or contact an administrator.`;
                     console.error("Login failed:", errorMessage);
                     setIsLoading(false);
                     return errorMessage;
                 }
                 
-                userEmail = matchingUsers[0].data().email;
+                userEmail = querySnapshot.docs[0].data().email;
             }
 
             await signInWithEmailAndPassword(auth, userEmail, password);

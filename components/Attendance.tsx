@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { AttendanceStatus } from '../types';
+import { AttendanceStatus, UserRole } from '../types';
 import { CheckCircleIcon, XCircleIcon, MinusCircleIcon } from './icons';
 import { useAppContext } from '../state/AppContext';
+import { useAuth } from '../state/AuthContext';
 
 const Attendance: React.FC = () => {
+    const { user: authUser } = useAuth();
     const { students, attendance, isLoading, loadAttendanceForMonth, upsertAttendance, seedAttendanceData } = useAppContext();
     const [isSeeding, setIsSeeding] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,10 +27,20 @@ const Attendance: React.FC = () => {
     }, [year, month, loadAttendanceForMonth]);
     
     const monthAttendance = useMemo(() => attendance[monthKey] || [], [attendance, monthKey]);
+    
+    const loggedInStudent = useMemo(() => {
+        if (authUser?.role === UserRole.Student && authUser.email) {
+            return students.find(s => s.email.toLowerCase() === authUser.email.toLowerCase());
+        }
+        return null;
+    }, [students, authUser]);
 
     const filteredStudents = useMemo(() => {
+        if (loggedInStudent) {
+            return [loggedInStudent];
+        }
         return students.filter(student => selectedClass === 'all' || student.class === selectedClass);
-    }, [students, selectedClass]);
+    }, [students, selectedClass, loggedInStudent]);
 
     const paginatedStudents = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -69,13 +81,13 @@ const Attendance: React.FC = () => {
         }
     };
     
-    const getStudentSummary = (studentId: string) => {
+    const getStudentSummary = useCallback((studentId: string) => {
         const studentAttendance = monthAttendance.filter(a => a.studentId === studentId);
         const present = studentAttendance.filter(a => a.status === 'Present').length;
         const absent = studentAttendance.filter(a => a.status === 'Absent').length;
         const leave = studentAttendance.filter(a => a.status === 'Leave').length;
         return { present, absent, leave };
-    };
+    }, [monthAttendance]);
 
     const handleSeed = async () => {
         setIsSeeding(true);
@@ -87,10 +99,77 @@ const Attendance: React.FC = () => {
             setIsSeeding(false);
         }
     };
-
-    // Fix: Explicitly type sort parameters to ensure correct type inference.
+    
     const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a: number, b: number) => a - b);
     const needsSeeding = students.length > 0 && monthAttendance.length === 0 && !isLoading;
+    
+    if (authUser?.role === UserRole.Student) {
+        if (isLoading) return <div className="text-center p-8">Loading your attendance...</div>;
+        if (!loggedInStudent) return <div className="text-center p-8 text-red-500">Your student profile could not be found.</div>;
+        
+        const summary = getStudentSummary(loggedInStudent.id);
+        const totalTrackedDays = summary.present + summary.absent + summary.leave;
+        const attendancePercentage = totalTrackedDays > 0 ? ((summary.present / totalTrackedDays) * 100).toFixed(1) : 'N/A';
+
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-800">Your Attendance Dashboard</h1>
+                        <p className="text-slate-600 mt-1">Hello, <span className="font-semibold">{loggedInStudent.name}</span>! Here are your attendance records.</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                            type="month"
+                            value={`${year}-${String(month + 1).padStart(2, '0')}`}
+                            onChange={handleMonthChange}
+                            className="p-2 border rounded-lg bg-gray-50 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="text-sm text-neutral-600 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p>"Welcome to your Attendance Dashboard. Here, you can view your personal attendance records for each course you're enrolled in. This section is designed exclusively for students and displays only your own attendance data. You can track your daily presence, absences, and overall attendance percentage. Use the filters to view by date range or course. Your data is private and secure—no other student’s attendance is visible."</p>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50">
+                            <tr>
+                                {dateArray.map(date => <th key={date.getDate()} className="px-4 py-3 font-medium text-slate-600 text-center w-12">{String(date.getDate()).padStart(2, '0')}</th>)}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr key={loggedInStudent.id}>
+                                {dateArray.map(date => {
+                                    const dateString = date.toISOString().split('T')[0];
+                                    const record = monthAttendance.find(a => a.studentId === loggedInStudent.id && a.date === dateString);
+                                    return (
+                                        <td key={date.getDate()} className="px-4 py-3 text-center w-12">
+                                            <div className="cursor-default flex justify-center">
+                                                {record ? getStatusIcon(record.status) : '-'}
+                                            </div>
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="border-t pt-4 flex justify-center items-center gap-6 flex-wrap">
+                    <h3 className="text-lg font-semibold text-slate-800">Monthly Summary:</h3>
+                    <div className="flex items-center gap-4 text-sm">
+                        <span className="flex items-center gap-2"><CheckCircleIcon className="w-5 h-5 text-sky-500" /> Present: <span className="font-bold">{summary.present}</span></span>
+                        <span className="flex items-center gap-2"><XCircleIcon className="w-5 h-5 text-red-500" /> Absent: <span className="font-bold">{summary.absent}</span></span>
+                        <span className="flex items-center gap-2"><MinusCircleIcon className="w-5 h-5 text-yellow-500" /> Leave: <span className="font-bold">{summary.leave}</span></span>
+                        <span className="flex items-center gap-2 font-semibold">Overall: <span className="font-bold">{attendancePercentage}%</span></span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md space-y-6">

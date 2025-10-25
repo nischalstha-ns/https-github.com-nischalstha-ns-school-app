@@ -143,7 +143,7 @@ const AccountManagement: React.FC = () => {
                     <table className="w-full text-sm text-left text-neutral-600">
                         <thead className="text-xs text-neutral-700 uppercase bg-neutral-50/80">
                             <tr>
-                                <th scope="col" className="p-4"><input type="checkbox" className="rounded" onChange={e => setSelectedUsers(e.target.checked ? paginatedUsers.map(u => u.id) : [])} checked={selectedUsers.length > 0 && selectedUsers.length === paginatedUsers.length} /></th>
+                                <th scope="col" className="p-4"><input type="checkbox" className="rounded" onChange={e => setSelectedUsers(e.target.checked ? paginatedUsers.map(u => u.id) : [])} checked={selectedUsers.length > 0 && selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0} /></th>
                                 {(['fullName', 'email', 'role', 'context', 'status'] as Array<keyof UserAccount>).map(key => (
                                     <th key={key} scope="col" className={`px-6 py-4 font-semibold cursor-pointer ${key === 'email' || key === 'context' ? 'hidden md:table-cell' : ''}`} onClick={() => requestSort(key)}>
                                         <div className="flex items-center gap-1">{key === 'context' ? 'Class/Dept' : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {sortConfig?.key === key ? (sortConfig.direction === 'ascending' ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />) : null}</div>
@@ -195,7 +195,7 @@ const StatCard: React.FC<{ title: string; value: string; }> = ({ title, value })
     </div>
 );
 
-const BulkGenerateModal: React.FC<{isOpen: boolean; onClose: () => void; students: Student[]; onGenerate: (c: number, u: string, p: string) => Promise<number>;}> = ({ isOpen, onClose, students, onGenerate }) => {
+const BulkGenerateModal: React.FC<{isOpen: boolean; onClose: () => void; students: Student[]; onGenerate: (c: number, u: string, p: string) => Promise<{ success: number; failed: number; errors: string[] }>;}> = ({ isOpen, onClose, students, onGenerate }) => {
     const [selectedClass, setSelectedClass] = useState<number | ''>('');
     const [usernamePattern, setUsernamePattern] = useState('{firstName}.{rollNo}');
     const [passwordPattern, setPasswordPattern] = useState('pass@{rollNo}{class}');
@@ -211,12 +211,20 @@ const BulkGenerateModal: React.FC<{isOpen: boolean; onClose: () => void; student
         if (selectedClass === '') return;
         setIsGenerating(true);
         try {
-            const count = await onGenerate(selectedClass, usernamePattern, passwordPattern);
-            alert(`${count} new student accounts were created for ${getClassDisplayName(selectedClass)}.`);
-            onClose();
+            const result = await onGenerate(selectedClass, usernamePattern, passwordPattern);
+            let alertMessage = `${result.success} new student accounts were created successfully for ${getClassDisplayName(selectedClass)}.`;
+            if (result.failed > 0) {
+                const errorDetails = result.errors.slice(0, 3).join('\n');
+                alertMessage += `\n\n${result.failed} accounts failed to create.\nCommon Errors:\n${errorDetails}`;
+                console.error("Bulk generation errors:", result.errors);
+            }
+            alert(alertMessage);
+            if (result.success > 0) {
+                onClose();
+            }
         } catch (err) {
-            console.error(err);
-            alert("An error occurred during bulk generation.");
+            console.error("An unexpected error occurred during bulk generation:", err);
+            alert("An unexpected error occurred. Please check the console for details.");
         } finally {
             setIsGenerating(false);
         }

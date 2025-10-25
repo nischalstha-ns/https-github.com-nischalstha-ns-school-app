@@ -114,7 +114,11 @@ export const addUser = async (data: Omit<UserAccount, 'id'>) => {
     
     try {
         await createUserWithEmailAndPassword(auth, data.email, data.password);
-        const { password, ...firestoreData } = data;
+        const { password, ...userDataWithoutPassword } = data;
+        const firestoreData = {
+            ...userDataWithoutPassword,
+            searchableName: data.fullName.toLowerCase()
+        };
         return addDoc(collection(db, 'users'), firestoreData);
     } catch (error: any) {
         console.error("Error creating user account:", error);
@@ -124,7 +128,13 @@ export const addUser = async (data: Omit<UserAccount, 'id'>) => {
         throw error;
     }
 };
-export const updateUser = (id: string, data: Partial<Omit<UserAccount, 'id'>>) => updateDoc(doc(db, 'users', id), data);
+export const updateUser = (id: string, data: Partial<Omit<UserAccount, 'id'>>) => {
+    const dataToUpdate: Partial<UserAccount> = { ...data };
+    if (data.fullName) {
+        dataToUpdate.searchableName = data.fullName.toLowerCase();
+    }
+    return updateDoc(doc(db, 'users', id), dataToUpdate);
+};
 export const deleteUser = (id: string) => deleteDoc(doc(db, 'users', id));
 
 // --- Announcement Functions ---
@@ -227,7 +237,11 @@ export const seedAllData = async () => {
         }
 
         try {
-            const { password, ...firestoreDoc } = userData;
+            const { password, ...userDataWithoutPassword } = userData;
+            const firestoreDoc = {
+                ...userDataWithoutPassword,
+                searchableName: userData.fullName.toLowerCase()
+            };
             await addDoc(collection(db, collectionName), firestoreDoc);
         } catch (error) {
             console.error(`Error creating Firestore doc for ${userData.email}:`, error);
@@ -265,13 +279,42 @@ export const seedAttendanceData = async (year: number, month: number) => {
     await batch.commit();
 };
 
-export const bulkCreateUsers = async (usersToCreate: Omit<UserAccount, 'id'>[]) => {
-    const batch = writeBatch(db);
-    usersToCreate.forEach(user => {
-        const docRef = doc(collection(db, 'users'));
-        batch.set(docRef, user);
-    });
-    await batch.commit();
+export const bulkCreateUsers = async (usersToCreate: Omit<UserAccount, 'id'>[]): Promise<{ success: number, failed: number, errors: string[] }> => {
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    const firestoreBatch = writeBatch(db);
+
+    for (const user of usersToCreate) {
+        if (!user.password) {
+            failed++;
+            errors.push(`Password missing for ${user.email}`);
+            continue;
+        }
+        try {
+            // 1. Create Firebase Auth user
+            await createUserWithEmailAndPassword(auth, user.email, user.password);
+            
+            // 2. Prepare Firestore document (without password)
+            const { password, ...userDataForFirestore } = user;
+            const docRef = doc(collection(db, 'users'));
+            firestoreBatch.set(docRef, userDataForFirestore);
+            
+            success++;
+        } catch (error: any) {
+            failed++;
+            const errorMessage = `Failed to create auth user for ${user.email}: ${error.code || error.message}`;
+            errors.push(errorMessage);
+            console.error(errorMessage);
+        }
+    }
+    
+    // 3. Commit all successful Firestore writes in a single batch
+    if (success > 0) {
+        await firestoreBatch.commit();
+    }
+
+    return { success, failed, errors };
 };
 
 export const bulkUpdateUserStatus = async (userIds: string[], status: 'Active' | 'Inactive') => {
